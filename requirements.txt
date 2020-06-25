@@ -1,0 +1,6 @@
+pytest
+pytest-cov
+numpy
+tensorflow
+tensorflow_hub
+h5py
