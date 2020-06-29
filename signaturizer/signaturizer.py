@@ -18,7 +18,7 @@ except ImportError:
 class Signaturizer():
     """Class loading TF-hub module and performing predictions."""
 
-    def __init__(self, model_name, verbose=True, compressed=True,
+    def __init__(self, model_name, verbose=True, compressed=True, local=False,
                  cc_url="https://dynbench3d.irbbarcelona.org/.well-known/acme-challenge/"):
         """Initialize the Signaturizer.
 
@@ -28,21 +28,51 @@ class Signaturizer():
             cc_url(str): The ChemicalChecker getModel API URL.
         """
         # Model url
-        model_url = cc_url + model_name
+        if local is False:
+            model_url = cc_url + model_name
+        else:
+            model_url = model_name
         if compressed:
             model_url += '.tar.gz'
         self.verbose = verbose
-        # load Module locally
-        self.module = hub.Module(model_url, tags=['serve'])
+        # load Module
+        print('model_url', model_url)
+        spec = hub.create_module_spec_from_saved_model(model_url)
+        self.module = hub.Module(spec, tags=['serve'])
 
     @staticmethod
-    def _export_model_as_module(saved_model_path, model_destination):
+    def _export_smilespred_as_module(smilespred_path, module_destination, tmp_path=None):
+        from keras import backend as K
+        from chemicalchecker.tool.smilespred import Smilespred
+        smilespred = Smilespred(smilespred_path)
+        smilespred.build_model(load=True)
+        model = smilespred.model
+        signature = tf.saved_model.signature_def_utils.predict_signature_def(
+            inputs={'default': model.input}, outputs={'default': model.output})
+        if tmp_path is None:
+            tmp_path = tempfile.mkdtemp()
+        print("_export_smilespred_as_module", tmp_path)
+        builder = tf.saved_model.builder.SavedModelBuilder(tmp_path)
+        builder.add_meta_graph_and_variables(
+            sess=K.get_session(),
+            tags=['serve'],
+            signature_def_map={'serving_default': signature
+                               })
+        builder.save()
+        Signaturizer._export_savedmodel_as_module(tmp_path, module_destination)
+        # clean temporary folder
+        # shutil.rmtree(tmp_path)
+
+    @staticmethod
+    def _export_savedmodel_as_module(savedmodel_path, module_destination, tmp_path=None):
         """Export tensorflow SavedModel to the TF-hub module format."""
         # Create ModuleSpec
         spec = hub.create_module_spec_from_saved_model(
-            saved_model_path, drop_collections=['saved_model_train_op'])
+            savedmodel_path, drop_collections=['saved_model_train_op'])
         # Initialize Graph and export session to temporary folder
-        tmp_path = tempfile.mkdtemp()
+        if tmp_path is None:
+            tmp_path = tempfile.mkdtemp()
+        print("_export_savedmodel_as_module", tmp_path)
         with tf.Graph().as_default():
             module = hub.Module(spec, tags=['serve'])
             with tf.Session() as session:
@@ -51,9 +81,9 @@ class Signaturizer():
                 module.export(tmp_path, session)
         # compress the exported files
         os.system("tar -cz -f %s --owner=0 --group=0 -C %s ." %
-                  (model_destination, tmp_path))
+                  (module_destination, tmp_path))
         # clean temporary folder
-        shutil.rmtree(tmp_path)
+        # shutil.rmtree(tmp_path)
 
     def predict(self, smiles, destination=None, chunk_size=1000):
         """Predict signatures for given SMILES.
@@ -99,16 +129,14 @@ class Signaturizer():
                         sign0s.append(calc_s0)
                 # stack input fingerprints and run predictor
                 sign0s = np.vstack(sign0s)
-                pred = self.module(sign0s, signature='predict', as_dict=True)
-                preds = session.run(pred)['predictions']
+                pred = self.module(sign0s, signature='serving_default')
+                preds = session.run(pred)
+                print('preds', preds)
                 # add NaN where SMILES conversion failed
                 if failed:
                     preds[np.array(failed)] = np.full((131, ),  np.nan)
                 # save chunk to results dictionary
                 results.signature[chunk] = preds[:, :128]
-                results.stddev_norm[chunk] = preds[:, 128]
-                results.intensity_norm[chunk] = preds[:, 129]
-                results.confidence[chunk] = preds[:, 130]
         results.close()
         return results
 
@@ -139,9 +167,6 @@ class SignaturizerResult():
             # simply numpy arrays
             self.h5 = None
             self.signature = np.zeros((size, 128), dtype=np.float32)
-            self.stddev_norm = np.zeros((size, ), dtype=np.float32)
-            self.intensity_norm = np.zeros((size, ), dtype=np.float32)
-            self.confidence = np.zeros((size, ), dtype=np.float32)
         else:
             # check if the file exists already
             if os.path.isfile(self.dst):
@@ -153,17 +178,8 @@ class SignaturizerResult():
                 self.h5 = h5py.File(self.dst, 'w')
                 self.h5.create_dataset(
                     'signature', (size, 128), dtype=np.float32)
-                self.h5.create_dataset(
-                    'stddev_norm', (size, ), dtype=np.float32)
-                self.h5.create_dataset(
-                    'intensity_norm', (size, ), dtype=np.float32)
-                self.h5.create_dataset(
-                    'confidence', (size, ), dtype=np.float32)
             # expose the datasets
             self.signature = self.h5['signature']
-            self.stddev_norm = self.h5['stddev_norm']
-            self.intensity_norm = self.h5['intensity_norm']
-            self.confidence = self.h5['confidence']
 
     def close(self):
         if self.h5 is None:
@@ -173,6 +189,29 @@ class SignaturizerResult():
         self.h5 = h5py.File(self.dst, 'r')
         # expose the datasets
         self.signature = self.h5['signature']
-        self.stddev_norm = self.h5['stddev_norm']
-        self.intensity_norm = self.h5['intensity_norm']
-        self.confidence = self.h5['confidence']
+
+
+# UNIT TEST
+from chemicalchecker import ChemicalChecker
+from chemicalchecker.core.signature_data import DataSignature
+test_smiles = ['CCC', 'C']
+
+cc = ChemicalChecker()
+s3 = cc.signature('B1.001', 'sign3')
+s3.predict_from_smiles(test_smiles, './tmp.h5')
+pred1 = DataSignature('./tmp_pred1.h5')
+
+a = Signaturizer('/tmp/moduledir/', compressed=False, local=True)
+module_destination = './tmp_dest'
+Signaturizer._export_smilespred_as_module(
+        os.path.join(s3.module_path, 'smiles_final'),
+        module_destination, tmp_path='./conv_k2tf')
+module2 = Signaturizer('./conv_k2tf', compressed=False, local=True)
+pred2 = module2.predict(test_smiles)
+Signaturizer._export_savedmodel_as_module(
+        os.path.join(s3.module_path, 'smiles_final'),
+        module_destination, tmp_path='./conv_tf2hub')
+module3 = Signaturizer('./conv_tf2hub', compressed=False, local=True)
+pred3 = module3.predict(test_smiles)
+assert(pred1 == pred2)
+assert(pred1 == pred3)
