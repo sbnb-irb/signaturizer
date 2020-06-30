@@ -1,7 +1,8 @@
 import os
+import math
+import pickle
 import shutil
 import unittest
-from helper import skip_if_import_exception
 
 from signaturizer import Signaturizer
 
@@ -13,51 +14,60 @@ class TestSignaturizer(unittest.TestCase):
         test_dir = os.path.dirname(os.path.realpath(__file__))
         self.data_dir = os.path.join(test_dir, 'data')
         self.tmp_dir = os.path.join(test_dir, 'tmp')
-        os.environ["CC_CONFIG"] = os.path.join(self.data_dir, 'config.json')
+        if os.path.exists(self.tmp_dir):
+            shutil.rmtree(self.tmp_dir)
+        os.mkdir(self.tmp_dir)
+        self.test_smiles = [
+            # Erlotinib
+            'COCCOC1=C(C=C2C(=C1)C(=NC=N2)NC3=CC=CC(=C3)C#C)OCCOC',
+            # Diphenhydramine
+            'CN(C)CCOC(C1=CC=CC=C1)C2=CC=CC=C2'
+        ]
 
     def tearDown(self):
         if os.path.exists(self.tmp_dir):
             shutil.rmtree(self.tmp_dir)
+            pass
 
-    @skip_if_import_exception
-    def test_export_consistency(self):
+    def test_predict(self):
+        # load reference predictions
+        ref_file = os.path.join(self.data_dir, 'pred.pkl')
+        pred_ref = pickle.load(open(ref_file, 'rb'))
+        # load module and predict
+        module_dir = os.path.join(self.data_dir, 'B1')
+        module = Signaturizer(module_dir)
+        res = module.predict(self.test_smiles)
+        self.assertEqual(pred_ref.tolist(), res.signature.tolist())
+        # test saving to file
+        destination = os.path.join(self.tmp_dir, 'pred.h5')
+        res = module.predict(self.test_smiles, destination)
+        self.assertTrue(os.path.isfile(destination))
+        self.assertEqual(pred_ref.tolist(), res.signature[:].tolist())
+        # test prediction of invalid SMILES
+        res = module.predict(['C', 'C&', 'C'])
+        for comp in res.signature[0]:
+            self.assertFalse(math.isnan(comp))
+        for comp in res.signature[1]:
+            self.assertTrue(math.isnan(comp))
+        for comp in res.signature[2]:
+            self.assertFalse(math.isnan(comp))
 
-        from chemicalchecker import ChemicalChecker
-        from chemicalchecker.core.signature_data import DataSignature
-        test_smiles = ['CCC', 'C']
+    def test_predict_multi(self):
+        module_dirs = list()
+        A1_path = os.path.join(self.data_dir, 'A1')
+        B1_path = os.path.join(self.data_dir, 'B1')
+        module_dirs.append(A1_path)
+        module_dirs.append(B1_path)
+        module_A1B1 = Signaturizer(module_dirs)
+        res_A1B1 = module_A1B1.predict(self.test_smiles)
+        self.assertEqual(res_A1B1.signature.shape[0], 2)
+        self.assertEqual(res_A1B1.signature.shape[1], 128 * 2)
 
-        cc = ChemicalChecker()
-        s3 = cc.signature('B1.001', 'sign3')
-        tmp_pred_ref = os.path.join(self.tmp_dir, 'tmp.h5')
-        s3.predict_from_smiles(test_smiles, tmp_pred_ref)
-        pred_ref = DataSignature(tmp_pred_ref)
-
-        # export smilespred
-        module_destination = os.path.join(self.tmp_dir, 'dest_smilespred')
-        tmp_path = os.path.join(self.tmp_dir, 'export_smilespred')
-        Signaturizer._export_smilespred_as_module(
-            os.path.join(s3.module_path, 'smiles_final'),
-            module_destination, tmp_path=tmp_path)
-        # test intermediate step
-        module = Signaturizer(tmp_path, compressed=False, local=True)
-        pred = module.predict(test_smiles)
-        self.assertEqual(pred_ref, pred)
-        # test final step
-        module = Signaturizer(module_destination, compressed=True, local=True)
-        pred = module.predict(test_smiles)
-        self.assertEqual(pred_ref, pred)
-
-        # export savedmodel
-        module_destination = os.path.join(self.tmp_dir, 'dest_savedmodel')
-        tmp_path = os.path.join(self.tmp_dir, 'export_savedmodel')
-        Signaturizer._export_savedmodel_as_module(
-            os.path.join(s3.module_path, 'smiles_final'),
-            module_destination, tmp_path=tmp_path)
-        # test intermediate step
-        module = Signaturizer(tmp_path, compressed=False, local=True)
-        pred = module.predict(test_smiles)
-        self.assertEqual(pred_ref, pred)
-        # test final step
-        module = Signaturizer(module_destination, compressed=True, local=True)
-        pred = module.predict(test_smiles)
-        self.assertEqual(pred_ref, pred)
+        module_A1 = Signaturizer(A1_path)
+        res_A1 = module_A1.predict(self.test_smiles)
+        self.assertEqual(res_A1B1.signature[:, :128].tolist(),
+                         res_A1.signature.tolist())
+        module_B1 = Signaturizer(B1_path)
+        res_B1 = module_B1.predict(self.test_smiles)
+        self.assertEqual(res_A1B1.signature[:, 128:].tolist(),
+                         res_B1.signature.tolist())
