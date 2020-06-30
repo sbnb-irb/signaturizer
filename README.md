@@ -23,6 +23,6 @@ print(results.signature)
 #    0.10035574]
 print(results.signature.shape)
 # (2, 128)
-# or save results as H5 file
+# or save results as H5 file if you have many molecules
 results = sign.predict(smiles, 'destination.h5')
 ```
