@@ -6,7 +6,7 @@ import tensorflow_hub as hub
 
 
 def export_smilespred(smilespred_path, destination,
-                      tmp_path=None, clear_tmp=True):
+                      tmp_path=None, clear_tmp=True, compress=True):
     """Export our Keras Smiles predictor to the TF-hub module format."""
     from keras import backend as K
     from chemicalchecker.tool.smilespred import Smilespred
@@ -40,14 +40,14 @@ def export_smilespred(smilespred_path, destination,
             signature_def_map={'serving_default': signature})
         builder.save()
     # now export savedmodel to module
-    export_savedmodel(tmp_path, destination)
+    export_savedmodel(tmp_path, destination, compress=compress)
     # clean temporary folder
     if clear_tmp:
         shutil.rmtree(tmp_path)
 
 
 def export_savedmodel(savedmodel_path, destination,
-                      tmp_path=None, clear_tmp=True):
+                      tmp_path=None, clear_tmp=True, compress=True):
     """Export Tensorflow SavedModel to the TF-hub module format."""
     if tmp_path is None:
         tmp_path = tempfile.mkdtemp()
@@ -61,9 +61,12 @@ def export_savedmodel(savedmodel_path, destination,
             sess.run(tf.global_variables_initializer())
             module.export(tmp_path, sess)
     print('DONE export_savedmodel')
-    # compress the exported files to destination
-    os.system("tar -cz -f %s --owner=0 --group=0 -C %s ." %
-              (destination, tmp_path))
+    if compress:
+        # compress the exported files to destination
+        os.system("tar -cz -f %s --owner=0 --group=0 -C %s ." %
+                  (destination, tmp_path))
+    else:
+        shutil.copytree(tmp_path, destination)
     # clean temporary folder
     if clear_tmp:
         shutil.rmtree(tmp_path)
@@ -76,5 +79,6 @@ def export_batch(cc, destination_dir, datasets=None):
     for ds in datasets:
         s3 = cc.signature(ds, 'sign3')
         pred_path = os.path.join(s3.model_path, 'smiles_final')
-        mdl_dest = os.path.join(destination_dir, ds[:2] + '.tar.gz')
-        export_smilespred(pred_path, mdl_dest)
+        mdl_dest = os.path.join(destination_dir, ds[:2])
+        export_smilespred(pred_path, mdl_dest, compress=False)
+        export_smilespred(pred_path, mdl_dest + '.tar.gz')
