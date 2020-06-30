@@ -45,7 +45,6 @@ class TestSignaturizer(unittest.TestCase):
 
         # load CC instance and smiles prediction model
         cc = ChemicalChecker()
-        #cc.set_verbosity('warning')
         s3 = cc.signature('B1.001', 'sign3')
         tmp_pred_ref = os.path.join(self.tmp_dir, 'tmp.h5')
         s3.predict_from_smiles(self.test_smiles, tmp_pred_ref)
