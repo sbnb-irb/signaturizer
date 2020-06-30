@@ -23,6 +23,7 @@ class TestSignaturizer(unittest.TestCase):
             # Diphenhydramine
             'CN(C)CCOC(C1=CC=CC=C1)C2=CC=CC=C2'
         ]
+        self.invalid_smiles = ['C', 'C&', 'C']
 
     def tearDown(self):
         if os.path.exists(self.tmp_dir):
@@ -44,7 +45,7 @@ class TestSignaturizer(unittest.TestCase):
         self.assertTrue(os.path.isfile(destination))
         self.assertEqual(pred_ref.tolist(), res.signature[:].tolist())
         # test prediction of invalid SMILES
-        res = module.predict(['C', 'C&', 'C'])
+        res = module.predict(self.invalid_smiles)
         for comp in res.signature[0]:
             self.assertFalse(math.isnan(comp))
         for comp in res.signature[1]:
@@ -53,6 +54,7 @@ class TestSignaturizer(unittest.TestCase):
             self.assertFalse(math.isnan(comp))
 
     def test_predict_multi(self):
+        # load multiple model and check that results stacked correctly
         module_dirs = list()
         A1_path = os.path.join(self.data_dir, 'A1')
         B1_path = os.path.join(self.data_dir, 'B1')
@@ -71,3 +73,11 @@ class TestSignaturizer(unittest.TestCase):
         res_B1 = module_B1.predict(self.test_smiles)
         self.assertEqual(res_A1B1.signature[:, 128:].tolist(),
                          res_B1.signature.tolist())
+
+        res = module_A1B1.predict(self.invalid_smiles)
+        for comp in res.signature[0]:
+            self.assertFalse(math.isnan(comp))
+        for comp in res.signature[1]:
+            self.assertTrue(math.isnan(comp))
+        for comp in res.signature[2]:
+            self.assertFalse(math.isnan(comp))
