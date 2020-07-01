@@ -4,7 +4,7 @@ import h5py
 import itertools
 import numpy as np
 from tqdm import tqdm
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 import tensorflow_hub as hub
 try:
     from rdkit import Chem
@@ -31,12 +31,13 @@ class Signaturizer():
             base_url(str): The ChemicalChecker getModel API URL.
         """
         self.verbose = verbose
-        if model_name.upper() == 'GLOBAL':
-            models = list(itertools.product("ABCDE", "12345"))
-        elif not isinstance(model_name, list):
-            models = [model_name]
-        else:
+        if isinstance(model_name, list):
             models = model_name
+        else:
+            if model_name.upper() == 'GLOBAL':
+                models = list(itertools.product("ABCDE", "12345"))
+            else:
+                models = [model_name]
         # load modules
         self.modules = list()
         self.graph = tf.Graph()
