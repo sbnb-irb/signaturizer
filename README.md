@@ -18,16 +18,16 @@ the original Chemical Checker
 [website](https://chemicalchecker.com/)
 
 
-# Installation
+## Installation
 
 
-## from PyPI
+### from PyPI
 
 ```bash
 pip install signaturizer
 ```
 
-## from Git repository
+### from Git repository
 
 ```bash
 pip install git+http://gitlabsbnb.irbbarcelona.org/packages/signaturizer.git
@@ -35,10 +35,10 @@ pip install git+http://gitlabsbnb.irbbarcelona.org/packages/signaturizer.git
 
 
 
-# Usage
+## Usage
 
 
-## Generating Bioactivity Signatures
+### Generating Bioactivity Signatures
 
 ```python
 from signaturizer import Signaturizer
@@ -60,7 +60,7 @@ results = sign.predict(smiles, 'destination.h5')
 ```
 
 
-## Generating Global Bioactivity Signatures
+### Generating Global Bioactivity Signatures
 ```python
 from signaturizer import Signaturizer
 # load the bioactivity space predictor for all space
@@ -75,7 +75,7 @@ print(results.signature.shape)
 ```
 
 
-# Citing
+## Citing
 
 If you use this resource in the course of your research, please consider citing 
 these papers:
