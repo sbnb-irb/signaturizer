@@ -18,7 +18,7 @@ class Signaturizer():
     """Class loading TF-hub module and performing predictions."""
 
     def __init__(self, model_name, verbose=True,
-                 base_url="https://dynbench3d.irbbarcelona.org/.well-known/acme-challenge/"):
+                 base_url="https://chemicalchecker.org/signaturizer/"):
         """Initialize the Signaturizer.
 
         Args:
@@ -26,11 +26,12 @@ class Signaturizer():
                 - the model name (the bioactivity space (e.g. "B1") )
                 - the model path (the directory containing 'saved_model.pb')
                 - a list of models names or paths (e.g. ["B1", "B2", "E5"])
-                - 'ALL' to get the stacked bioactivity signatures
+                - 'GLOBAL' to get the global (i.e. horizontally stacked)
+                    bioactivity signature.
             base_url(str): The ChemicalChecker getModel API URL.
         """
         self.verbose = verbose
-        if model_name == 'ALL':
+        if model_name.upper() == 'GLOBAL':
             models = list(itertools.product("ABCDE", "12345"))
         elif not isinstance(model_name, list):
             models = [model_name]
