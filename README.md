@@ -20,6 +20,17 @@ the original Chemical Checker
 
 ## Installation
 
+The only strong dependency for this resource is [RDKit](https://www.rdkit.org/docs/Install.html)
+which can be installed in a local conda environment.
+
+
+### Conda environment
+
+```bash
+conda create --no-default-packages -n sign -y python
+conda activate sign
+conda install -c conda-forge -y rdkit
+```
 
 ### from PyPI
 
