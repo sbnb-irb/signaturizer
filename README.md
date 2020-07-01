@@ -17,7 +17,7 @@ pip install git+http://gitlabsbnb.irbbarcelona.org/packages/signaturizer.git
 ```python
 from signaturizer import Signaturizer
 # load the bioactivity space predictor
-sign = Signaturizer('/aloy/web_checker/exported_smilespreds/A1')
+sign = Signaturizer('/aloy/web_checker/exported_smilespreds/B1')
 # prepare a list of SMILES strings
 smiles = ['C', 'CCC']
 # run prediction
@@ -31,4 +31,19 @@ print(results.signature.shape)
 # (2, 128)
 # or save results as H5 file if you have many molecules
 results = sign.predict(smiles, 'destination.h5')
+```
+
+
+# Example Multiple Signatures
+```python
+from signaturizer import Signaturizer
+# load the bioactivity space predictor for all space
+models = ['/aloy/web_checker/exported_smilespreds/%s%s' % (y,x) for y in 'ABCDE' for x in '12345']
+sign = Signaturizer(models)
+# prepare a list of SMILES strings
+smiles = ['C', 'CCC']
+# run prediction
+results = sign.predict(smiles)
+print(results.signature.shape)
+# (2, 3200)
 ```
