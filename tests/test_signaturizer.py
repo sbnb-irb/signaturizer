@@ -87,3 +87,12 @@ class TestSignaturizer(unittest.TestCase):
         res = module.predict(self.test_smiles)
         self.assertEqual(res.signature.shape[0], 2)
         self.assertEqual(res.signature.shape[1], 128 * 25)
+
+    def test_overwrite(self):
+        module_dir = os.path.join(self.data_dir, 'B1')
+        module = Signaturizer(module_dir)
+        destination = os.path.join(self.tmp_dir, 'pred.h5')
+        module.predict(self.test_smiles, destination)
+        # repeating writing will result in an exception
+        with self.assertRaises(Exception):
+            module.predict(self.test_smiles, destination)
