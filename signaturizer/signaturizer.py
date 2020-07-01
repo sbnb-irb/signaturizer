@@ -68,6 +68,10 @@ class Signaturizer():
                 features = len(self.modules) * 128
                 results = SignaturizerResult(len(smiles), destination,
                                              features)
+                if results.readonly:
+                    raise Exception(
+                        'Destination file already exists, ' +
+                        'delete or rename to proceed.')
                 # predict by chunk
                 all_chunks = range(0, len(smiles), chunk_size)
                 for i in tqdm(all_chunks, disable=self.verbose):
@@ -128,6 +132,7 @@ class SignaturizerResult():
                 be saved.
         """
         self.dst = destination
+        self.readonly = False
         if self.dst is None:
             # simple numpy arrays
             self.h5 = None
@@ -138,6 +143,7 @@ class SignaturizerResult():
                 print('HDF5 file %s exists, opening in read-only.' % self.dst)
                 # this avoid overwriting by mistake
                 self.h5 = h5py.File(self.dst, 'r')
+                self.readonly = True
             else:
                 # create the datasets
                 self.h5 = h5py.File(self.dst, 'w')
