@@ -1,10 +1,16 @@
 # Signaturizer
 Generate Chemical Checker signatures from molecules SMILES.
 
-# Install
+# Install from PyPI
 
 ```
 pip install signaturizer
+```
+
+# Install from Git repository
+
+```
+pip install git+http://gitlabsbnb.irbbarcelona.org/packages/signaturizer.git
 ```
 
 # Example
