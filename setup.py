@@ -1,10 +1,9 @@
 import setuptools
 from setuptools import find_packages
-from signaturizer.version import Version
 
 
 setuptools.setup(name='signaturizer',
-                 version=Version('1.0.8').number,
+                 version='1.0.0',
                  description='Generate Chemical Checker signatures from molecules SMILES.',
                  long_description=open('README.md').read().strip(),
                  long_description_content_type="text/markdown",
