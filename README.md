@@ -1,22 +1,48 @@
 # Signaturizer
-Generate Chemical Checker signatures from molecules SMILES.
 
-# Install from PyPI
+![alt text](http://gitlabsbnb.irbbarcelona.org/packages/signaturizer/raw/master/images/cc_signatures.jpg "Molecule Signaturization")
 
-```
+Bioactivity signatures are multi-dimensional vectors that capture biological
+traits of the molecule (for example, its target profile) in a numerical vector
+format that is akin to the structural descriptors or fingerprints used in the
+field of chemoinformatics.
+
+Our **signaturizers** relate to bioactivities of 25 different types (including
+target profiles, cellular response and clinical outcomes) and can be used as
+drop-in replacements for chemical descriptors in day-to-day chemoinformatics
+tasks.
+
+For and overview of the different bioctivity descriptors available please check
+the original Chemical Checker 
+[paper](https://www.nature.com/articles/s41587-020-0502-7) or 
+[website](https://chemicalchecker.com/)
+
+
+# Installation
+
+
+## from PyPI
+
+```bash
 pip install signaturizer
 ```
 
-# Install from Git repository
+## from Git repository
 
-```
+```bash
 pip install git+http://gitlabsbnb.irbbarcelona.org/packages/signaturizer.git
 ```
 
-# Example
+
+
+# Usage
+
+
+## Generating Bioactivity Signatures
+
 ```python
 from signaturizer import Signaturizer
-# load the bioactivity space predictor
+# load the predictor for B1 space (representing the Mode of Action)
 sign = Signaturizer('/aloy/web_checker/exported_smilespreds/B1')
 # prepare a list of SMILES strings
 smiles = ['C', 'CCC']
@@ -34,7 +60,7 @@ results = sign.predict(smiles, 'destination.h5')
 ```
 
 
-# Example Multiple Signatures
+## Generating Multiple Bioactivity Signatures
 ```python
 from signaturizer import Signaturizer
 # load the bioactivity space predictor for all space
