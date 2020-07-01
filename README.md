@@ -43,7 +43,7 @@ pip install git+http://gitlabsbnb.irbbarcelona.org/packages/signaturizer.git
 ```python
 from signaturizer import Signaturizer
 # load the predictor for B1 space (representing the Mode of Action)
-sign = Signaturizer('/aloy/web_checker/exported_smilespreds/B1')
+sign = Signaturizer('B1')
 # prepare a list of SMILES strings
 smiles = ['C', 'CCC']
 # run prediction
@@ -64,8 +64,7 @@ results = sign.predict(smiles, 'destination.h5')
 ```python
 from signaturizer import Signaturizer
 # load the bioactivity space predictor for all space
-models = ['/aloy/web_checker/exported_smilespreds/%s%s' % (y,x) for y in 'ABCDE' for x in '12345']
-sign = Signaturizer(models)
+sign = Signaturizer('GLOBAL')
 # prepare a list of SMILES strings
 smiles = ['C', 'CCC']
 # run prediction

@@ -18,7 +18,7 @@ class Signaturizer():
     """Class loading TF-hub module and performing predictions."""
 
     def __init__(self, model_name, verbose=True,
-                 base_url="https://chemicalchecker.org/signaturizer/"):
+                 base_url="file:///aloy/web_checker/exported_smilespreds/"):
         """Initialize the Signaturizer.
 
         Args:
@@ -31,13 +31,13 @@ class Signaturizer():
             base_url(str): The ChemicalChecker getModel API URL.
         """
         self.verbose = verbose
-        if isinstance(model_name, list):
-            models = model_name
-        else:
+        if not isinstance(model_name, list):
             if model_name.upper() == 'GLOBAL':
-                models = list(itertools.product("ABCDE", "12345"))
+                models = [y + x for y in 'ABCDE' for x in '12345']
             else:
                 models = [model_name]
+        else:
+            models = model_name
         # load modules
         self.modules = list()
         self.graph = tf.Graph()

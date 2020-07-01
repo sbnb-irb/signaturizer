@@ -81,3 +81,9 @@ class TestSignaturizer(unittest.TestCase):
             self.assertTrue(math.isnan(comp))
         for comp in res.signature[2]:
             self.assertFalse(math.isnan(comp))
+
+    def test_predict_global(self):
+        module = Signaturizer('GLOBAL')
+        res = module.predict(self.test_smiles)
+        self.assertEqual(res.signature.shape[0], 2)
+        self.assertEqual(res.signature.shape[1], 128 * 25)
