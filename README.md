@@ -60,7 +60,7 @@ results = sign.predict(smiles, 'destination.h5')
 ```
 
 
-## Generating Multiple Bioactivity Signatures
+## Generating Global Bioactivity Signatures
 ```python
 from signaturizer import Signaturizer
 # load the bioactivity space predictor for all space
@@ -72,4 +72,29 @@ smiles = ['C', 'CCC']
 results = sign.predict(smiles)
 print(results.signature.shape)
 # (2, 3200)
+```
+
+
+# Citing
+
+If you use this resource in the course of your research, please consider citing 
+these papers:
+
+Duran-Frigola M, et al "Extending the small-molecule similarity principle to all levels of biology with the Chemical Checker."" Nature Biotechnology (2020)
+
+You can use this bibtex entry:
+
+```
+﻿@Article{Duran-Frigola2020,
+    author={Duran-Frigola, Miquel and Pauls, Eduardo and Guitart-Pla, Oriol and Bertoni, Martino and Alcalde, V{\'i}ctor and Amat, David and Juan-Blanco, Teresa and Aloy, Patrick},
+    title={Extending the small-molecule similarity principle to all levels of biology with the Chemical Checker},
+    journal={Nature Biotechnology},
+    year={2020},
+    month={May},
+    day={18},
+    abstract={Small molecules are usually compared by their chemical structure, but there is no unified analytic framework for representing and comparing their biological activity. We present the Chemical Checker (CC), which provides processed, harmonized and integrated bioactivity data on {\textasciitilde}800,000 small molecules. The CC divides data into five levels of increasing complexity, from the chemical properties of compounds to their clinical outcomes. In between, it includes targets, off-targets, networks and cell-level information, such as omics data, growth inhibition and morphology. Bioactivity data are expressed in a vector format, extending the concept of chemical similarity to similarity between bioactivity signatures. We show how CC signatures can aid drug discovery tasks, including target identification and library characterization. We also demonstrate the discovery of compounds that reverse and mimic biological signatures of disease models and genetic perturbations in cases that could not be addressed using chemical information alone. Overall, the CC signatures facilitate the conversion of bioactivity data to a format that is readily amenable to machine learning methods.},
+    issn={1546-1696},
+    doi={10.1038/s41587-020-0502-7},
+    url={https://doi.org/10.1038/s41587-020-0502-7}
+}
 ```
