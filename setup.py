@@ -3,7 +3,7 @@ from setuptools import find_packages
 
 
 setuptools.setup(name='signaturizer',
-                 version='1.0.0',
+                 version='1.1.0',
                  description='Generate Chemical Checker signatures from molecules SMILES.',
                  long_description=open('README.md').read().strip(),
                  long_description_content_type="text/markdown",
