@@ -1,4 +1,4 @@
-image: informaticsmatters/rdkit-python3-debian:latest
+image: informaticsmatters/rdkit-python3-centos:latest
 
 variables:
     PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
@@ -9,8 +9,7 @@ cache:
     - venv/
 
 before_script:
-  - apt-get update
-  - apt-get install gcc python3-dev python3-pip libxml2-dev libxslt1-dev zlib1g-dev g++
+  #- yum install gcc python3-dev python3-pip libxml2-dev libxslt1-dev zlib1g-dev g++
   - python --version
   - pip install -r requirements.txt
 
