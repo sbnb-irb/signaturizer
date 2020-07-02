@@ -110,7 +110,7 @@ class Signaturizer(object):
                             calc_s0 = np.array(bin_s0).astype(np.float32)
                         except Exception as err:
                             # in case of failure save idx to fill NaNs
-                            print("SKIPPING %s: %s", mol_smiles, str(err))
+                            print("SKIPPING %s: %s" % (mol_smiles, str(err)))
                             failed.append(idx)
                             calc_s0 = np.full((2048, ),  np.nan)
                         finally:
