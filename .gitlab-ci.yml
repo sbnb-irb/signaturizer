@@ -8,6 +8,11 @@ before_script:
     - conda install -c conda-forge -y rdkit
     - pip install -r requirements.txt
 
+stages:
+  - test
+  - test_deploy
+  - deploy
+
 unittest:
   stage: test
   script:
