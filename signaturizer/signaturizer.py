@@ -30,6 +30,8 @@ class Signaturizer(object):
                 - 'GLOBAL' to get the global (i.e. horizontally stacked)
                     bioactivity signature.
             base_url(str): The ChemicalChecker getModel API URL.
+            tf_version(int): The Tesorflow version.
+            verbose(bool): If True some more information will be printed.
         """
         self.verbose = verbose
         if not isinstance(model_name, list):
@@ -131,6 +133,7 @@ class Signaturizer(object):
             raise Exception('Cannot find tfhub cache directory, ' +
                             'please set TFHUB_CACHE_DIR variable')
         shutil.rmtree(cache_dir)
+        os.mkdir(cache_dir)
 
 
 class SignaturizerResult():
