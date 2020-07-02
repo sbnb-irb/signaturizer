@@ -1,4 +1,4 @@
-image: informaticsmatters/rdkit:latest
+image: informaticsmatters/rdkit-python3-debian:latest
 
 variables:
     PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
