@@ -3,6 +3,7 @@ import math
 import pickle
 import shutil
 import unittest
+import numpy as np
 
 from signaturizer import Signaturizer
 
@@ -38,12 +39,12 @@ class TestSignaturizer(unittest.TestCase):
         module_dir = os.path.join(self.data_dir, 'B1')
         module = Signaturizer(module_dir, local=True)
         res = module.predict(self.test_smiles)
-        self.assertEqual(pred_ref.tolist(), res.signature.tolist())
+        np.testing.assert_almost_equal(pred_ref, res.signature[:])
         # test saving to file
         destination = os.path.join(self.tmp_dir, 'pred.h5')
         res = module.predict(self.test_smiles, destination)
         self.assertTrue(os.path.isfile(destination))
-        self.assertEqual(pred_ref.tolist(), res.signature[:].tolist())
+        np.testing.assert_almost_equal(pred_ref, res.signature[:])
         # test prediction of invalid SMILES
         res = module.predict(self.invalid_smiles)
         for comp in res.signature[0]:
@@ -67,12 +68,13 @@ class TestSignaturizer(unittest.TestCase):
 
         module_A1 = Signaturizer(A1_path, local=True)
         res_A1 = module_A1.predict(self.test_smiles)
-        self.assertEqual(res_A1B1.signature[:, :128].tolist(),
-                         res_A1.signature.tolist())
+        np.testing.assert_almost_equal(res_A1B1.signature[:, :128],
+                                       res_A1.signature)
+
         module_B1 = Signaturizer(B1_path, local=True)
         res_B1 = module_B1.predict(self.test_smiles)
-        self.assertEqual(res_A1B1.signature[:, 128:].tolist(),
-                         res_B1.signature.tolist())
+        np.testing.assert_almost_equal(res_A1B1.signature[:, 128:],
+                                       res_B1.signature)
 
         res = module_A1B1.predict(self.invalid_smiles)
         for comp in res.signature[0]:

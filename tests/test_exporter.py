@@ -1,7 +1,7 @@
 import os
-import time
 import shutil
 import unittest
+import numpy as np
 from .helper import skip_if_import_exception, start_http_server
 
 from signaturizer.exporter import export_smilespred, export_savedmodel
@@ -64,13 +64,13 @@ class TestSignaturizer(unittest.TestCase):
         module = Signaturizer(tmp_path_smilespred, local=True)
         res = module.predict(self.test_smiles)
         pred = res.signature[:]
-        self.assertEqual(pred_ref.tolist(), pred.tolist())
+        np.testing.assert_almost_equal(pred_ref, pred)
         # test final step
         base_url = "http://localhost:%d/" % (self.server_port)
         module = Signaturizer(module_file, base_url=base_url, version=version)
         res = module.predict(self.test_smiles)
         pred = res.signature[:]
-        self.assertEqual(pred_ref.tolist(), pred.tolist())
+        np.testing.assert_almost_equal(pred_ref, pred)
 
         # export savedmodel
         module_destination = os.path.join(
@@ -83,9 +83,9 @@ class TestSignaturizer(unittest.TestCase):
         module = Signaturizer(tmp_path_savedmodel, local=True)
         res = module.predict(self.test_smiles)
         pred = res.signature[:]
-        self.assertEqual(pred_ref.tolist(), pred.tolist())
+        np.testing.assert_almost_equal(pred_ref, pred)
         # test final step
         module = Signaturizer(module_file, base_url=base_url, version=version)
         res = module.predict(self.test_smiles)
         pred = res.signature[:]
-        self.assertEqual(pred_ref.tolist(), pred.tolist())
+        np.testing.assert_almost_equal(pred_ref, pred)
