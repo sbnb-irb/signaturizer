@@ -9,6 +9,7 @@ before_script:
 
 stages:
   - test
+  - deploy
 
 unittest:
   stage: test
@@ -18,3 +19,13 @@ unittest:
     - export PYTHONPATH="$PYTHONPATH:."
     - python -c "import sys;print(sys.path)"
     - pytest
+
+pypi_deploy_test:
+  stage: deploy
+  cache: {}
+  script:
+    - pip install -U twine
+    - python setup.py sdist
+    - twine upload --verbose --repository-url https://test.pypi.org/legacy/ dist/*
+  only:
+    - master
