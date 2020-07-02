@@ -36,7 +36,7 @@ class TestSignaturizer(unittest.TestCase):
         pred_ref = pickle.load(open(ref_file, 'rb'))
         # load module and predict
         module_dir = os.path.join(self.data_dir, 'B1')
-        module = Signaturizer(module_dir)
+        module = Signaturizer(module_dir, local=True)
         res = module.predict(self.test_smiles)
         self.assertEqual(pred_ref.tolist(), res.signature.tolist())
         # test saving to file
@@ -60,16 +60,16 @@ class TestSignaturizer(unittest.TestCase):
         B1_path = os.path.join(self.data_dir, 'B1')
         module_dirs.append(A1_path)
         module_dirs.append(B1_path)
-        module_A1B1 = Signaturizer(module_dirs)
+        module_A1B1 = Signaturizer(module_dirs, local=True)
         res_A1B1 = module_A1B1.predict(self.test_smiles)
         self.assertEqual(res_A1B1.signature.shape[0], 2)
         self.assertEqual(res_A1B1.signature.shape[1], 128 * 2)
 
-        module_A1 = Signaturizer(A1_path)
+        module_A1 = Signaturizer(A1_path, local=True)
         res_A1 = module_A1.predict(self.test_smiles)
         self.assertEqual(res_A1B1.signature[:, :128].tolist(),
                          res_A1.signature.tolist())
-        module_B1 = Signaturizer(B1_path)
+        module_B1 = Signaturizer(B1_path, local=True)
         res_B1 = module_B1.predict(self.test_smiles)
         self.assertEqual(res_A1B1.signature[:, 128:].tolist(),
                          res_B1.signature.tolist())
@@ -82,7 +82,7 @@ class TestSignaturizer(unittest.TestCase):
         for comp in res.signature[2]:
             self.assertFalse(math.isnan(comp))
 
-    def test_predict_global(self):
+    def test_predict_global_remote(self):
         module = Signaturizer('GLOBAL')
         res = module.predict(self.test_smiles)
         self.assertEqual(res.signature.shape[0], 2)
@@ -90,7 +90,7 @@ class TestSignaturizer(unittest.TestCase):
 
     def test_overwrite(self):
         module_dir = os.path.join(self.data_dir, 'B1')
-        module = Signaturizer(module_dir)
+        module = Signaturizer(module_dir, local=True)
         destination = os.path.join(self.tmp_dir, 'pred.h5')
         module.predict(self.test_smiles, destination)
         # repeating writing will result in an exception

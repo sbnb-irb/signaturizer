@@ -18,6 +18,7 @@ class TestSignaturizer(unittest.TestCase):
         if os.path.exists(self.tmp_dir):
             shutil.rmtree(self.tmp_dir)
         os.mkdir(self.tmp_dir)
+        os.mkdir(os.path.join(self.tmp_dir, 'vXXX'))
         self.cwd = os.getcwd()
         os.chdir(self.tmp_dir)
         self.server_port = start_http_server()
@@ -51,21 +52,22 @@ class TestSignaturizer(unittest.TestCase):
         pred_ref = DataSignature(tmp_pred_ref)[:]
 
         # export smilespred
+        version = 'vXXX'
         module_file = 'dest_smilespred.tar.gz'
         module_destination = os.path.join(
-            self.tmp_dir, module_file)
+            self.tmp_dir, version, module_file)
         tmp_path_smilespred = os.path.join(self.tmp_dir, 'export_smilespred')
         export_smilespred(
             os.path.join(s3.model_path, 'smiles_final'),
             module_destination, tmp_path=tmp_path_smilespred, clear_tmp=False)
         # test intermediate step
-        module = Signaturizer(tmp_path_smilespred)
+        module = Signaturizer(tmp_path_smilespred, local=True)
         res = module.predict(self.test_smiles)
         pred = res.signature[:]
         self.assertEqual(pred_ref.tolist(), pred.tolist())
         # test final step
         base_url = "http://localhost:%d/" % (self.server_port)
-        module = Signaturizer(module_file, base_url=base_url)
+        module = Signaturizer(module_file, base_url=base_url, version=version)
         res = module.predict(self.test_smiles)
         pred = res.signature[:]
         self.assertEqual(pred_ref.tolist(), pred.tolist())
@@ -78,12 +80,12 @@ class TestSignaturizer(unittest.TestCase):
             tmp_path_smilespred, module_destination,
             tmp_path=tmp_path_savedmodel, clear_tmp=False)
         # test intermediate step
-        module = Signaturizer(tmp_path_savedmodel)
+        module = Signaturizer(tmp_path_savedmodel, local=True)
         res = module.predict(self.test_smiles)
         pred = res.signature[:]
         self.assertEqual(pred_ref.tolist(), pred.tolist())
         # test final step
-        module = Signaturizer(module_file, base_url=base_url)
+        module = Signaturizer(module_file, base_url=base_url, version=version)
         res = module.predict(self.test_smiles)
         pred = res.signature[:]
         self.assertEqual(pred_ref.tolist(), pred.tolist())
