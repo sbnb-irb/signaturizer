@@ -18,8 +18,8 @@ class Signaturizer(object):
     """Class loading TF-hub module and performing predictions."""
 
     def __init__(self, model_name,
-                 base_url="file:///aloy/web_checker/exported_smilespreds/",
-                 tf_version=1, verbose=True):
+                 base_url="http://chemicalchecker.com/api/db/getSignaturizer/",
+                 version='v1', local=False, tf_version='1', verbose=True):
         """Initialize the Signaturizer.
 
         Args:
@@ -30,6 +30,9 @@ class Signaturizer(object):
                 - 'GLOBAL' to get the global (i.e. horizontally stacked)
                     bioactivity signature.
             base_url(str): The ChemicalChecker getModel API URL.
+            version(int): Signaturizer version.
+            local(bool): Wethere the specified model_name shoudl be
+                interpreted as a path to a local model.
             tf_version(int): The Tesorflow version.
             verbose(bool): If True some more information will be printed.
         """
@@ -47,15 +50,19 @@ class Signaturizer(object):
         self.graph = tf.Graph()
         with self.graph.as_default():
             for model in models:
-                if os.path.isdir(model):
-                    if self.verbose:
-                        print('LOADING local:', model)
-                    spec = hub.create_module_spec_from_saved_model(model)
-                    module = hub.Module(spec, tags=['serve'])
+                if local:
+                    if os.path.isdir(model):
+                        if self.verbose:
+                            print('LOADING local:', model)
+                        spec = hub.create_module_spec_from_saved_model(model)
+                        module = hub.Module(spec, tags=['serve'])
+                    else:
+                        raise Exception('Module path not found!')
                 else:
+                    url = base_url + '%s/%s' % (version, model)
                     if self.verbose:
-                        print('LOADING remote:', base_url + model)
-                    module = hub.Module(base_url + model, tags=['serve'])
+                        print('LOADING remote:', url)
+                    module = hub.Module(url, tags=['serve'])
                 self.modules.append(module)
                 self.model_names.append(model)
 
