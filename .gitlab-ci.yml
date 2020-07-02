@@ -3,7 +3,7 @@ image: continuumio/miniconda3:latest
 before_script:
   - python --version
   - conda create --no-default-packages -n signaturizer_env -y python
-  - conda activate signaturizer_env
+  - source activate signaturizer_env
   - conda install -c conda-forge -y rdkit
   - pip install -r requirements.txt
 
