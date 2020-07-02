@@ -70,6 +70,18 @@ print(results.signature.shape)
 results = sign.predict(smiles, 'destination.h5')
 ```
 
+### Generating multiple Signatures in one batch
+```python
+from signaturizer import Signaturizer
+# load the predictor for any CC space in any order
+sign = Signaturizer(['B1', 'E4', 'A5', 'D3'])
+# prepare a list of SMILES strings
+smiles = ['C', 'CCC']
+# run prediction
+results = sign.predict(smiles)
+print(results.signature.shape)
+# (2, 512)
+```
 
 ### Generating Global Bioactivity Signatures
 ```python
