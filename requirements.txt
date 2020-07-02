@@ -4,3 +4,5 @@ numpy
 tensorflow
 tensorflow_hub
 h5py
+shutil
+tqdm
