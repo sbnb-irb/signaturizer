@@ -1,14 +1,6 @@
 image: continuumio/miniconda3:latest
 
-stages:
-  - build
-  - test
-  - test_deploy
-  - deploy
-
-build_enviroment:
-  stage: build
-  script:
+before_script:
     - python --version
     - export PIP_CACHE_DIR="/opt/cache/pip"
     - conda create --no-default-packages -n signaturizer_env -y python
@@ -16,6 +8,9 @@ build_enviroment:
     - conda install -c conda-forge -y rdkit
     - pip install -r requirements.txt
 
+build_enviroment:
+  stage: build
+  script:
 unittest:
   stage: test
   script:
