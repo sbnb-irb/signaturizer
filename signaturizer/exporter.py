@@ -52,7 +52,6 @@ def export_savedmodel(savedmodel_path, destination,
     if tmp_path is None:
         tmp_path = tempfile.mkdtemp()
     # save to hub module format
-    print('SAVE export_savedmodel')
     with tf.Graph().as_default():
         spec = hub.create_module_spec_from_saved_model(savedmodel_path)
         module = hub.Module(spec, tags=['serve'])
@@ -60,7 +59,6 @@ def export_savedmodel(savedmodel_path, destination,
             sess.run(tf.tables_initializer())
             sess.run(tf.global_variables_initializer())
             module.export(tmp_path, sess)
-    print('DONE export_savedmodel')
     if compress:
         # compress the exported files to destination
         os.system("tar -cz -f %s --owner=0 --group=0 -C %s ." %
