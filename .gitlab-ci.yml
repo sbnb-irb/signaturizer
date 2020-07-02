@@ -1,0 +1,27 @@
+image: python:3.7
+
+before_script:
+  - python --version
+  - pip install -r requirements.txt
+
+stages:
+  - test
+
+unittest:
+  stage: test
+  script:
+    - pwd
+    - ls -l
+    - export PYTHONPATH="$PYTHONPATH:."
+    - python -c "import sys;print(sys.path)"
+    - pytest
+
+pypi_deploy:
+  stage: deploy
+  cache: {}
+  script:
+    - pip install -U twine
+    - python setup.py sdist
+    - twine upload --verbose --repository-url https://test.pypi.org/legacy/ dist/*
+  only:
+    - master
