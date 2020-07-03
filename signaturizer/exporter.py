@@ -1,8 +1,11 @@
 import os
 import shutil
 import tempfile
-import tensorflow.compat.v1 as tf
-import tensorflow_hub as hub
+import warnings
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", category=FutureWarning)
+    import tensorflow.compat.v1 as tf
+    import tensorflow_hub as hub
 
 
 def export_smilespred(smilespred_path, destination,
