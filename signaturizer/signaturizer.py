@@ -4,8 +4,11 @@ import h5py
 import shutil
 import numpy as np
 from tqdm import tqdm
-import tensorflow.compat.v1 as tf
-import tensorflow_hub as hub
+import warnings
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", category=FutureWarning)
+    import tensorflow.compat.v1 as tf
+    import tensorflow_hub as hub
 try:
     from rdkit import Chem
     from rdkit.Chem import AllChem
@@ -19,7 +22,7 @@ class Signaturizer(object):
 
     def __init__(self, model_name,
                  base_url="http://chemicalchecker.com/api/db/getSignaturizer/",
-                 version='v1', local=False, tf_version='1', verbose=True):
+                 version='v1', local=False, tf_version='1', verbose=False):
         """Initialize the Signaturizer.
 
         Args:
