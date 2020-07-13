@@ -72,7 +72,7 @@ results = sign.predict(smiles, 'destination.h5')
 
 ## Usage
 
-For an exemplary application please check the ipython [notebook](http://gitlabsbnb.irbbarcelona.org/packages/signaturizer/raw/master/notebook/signaturizer.ipynb) in the `notebook` directory (you can download it and run on [Google Colab](https://colab.research.google.com/notebooks/))
+For an exemplary application please check the ipython [notebook](http://gitlabsbnb.irbbarcelona.org/packages/signaturizer/blob/master/notebook/signaturizer.ipynb) in the `notebook` directory (you can download it and run on [Google Colab](https://colab.research.google.com/notebooks/))
 
 
 ## Citing
