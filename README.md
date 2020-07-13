@@ -46,7 +46,7 @@ pip install git+http://gitlabsbnb.irbbarcelona.org/packages/signaturizer.git
 
 
 
-## Basic Usage
+## Intro
 
 
 ### Generating Bioactivity Signatures
@@ -70,9 +70,9 @@ print(results.signature.shape)
 results = sign.predict(smiles, 'destination.h5')
 ```
 
-## Advanced usage
+## Usage
 
-For an exemplary application please check the ipython [notebook](http://gitlabsbnb.irbbarcelona.org/packages/signaturizer/blob/master/notebook/foodb_analysis.ipynb) in the `notebook` directory
+For an exemplary application please check the ipython [notebook](http://gitlabsbnb.irbbarcelona.org/packages/signaturizer/raw/master/notebook/signaturizer.ipynb) in the `notebook` directory (you can download it and run on [Google Colab](https://colab.research.google.com/notebooks/))
 
 
 ## Citing
