@@ -69,13 +69,16 @@ class Signaturizer(object):
                 self.modules.append(module)
                 self.model_names.append(model)
 
-    def predict(self, smiles, destination=None, chunk_size=1000):
+    def predict(self, smiles, destination=None, applicability=False,
+                chunk_size=1000):
         """Predict signatures for given SMILES.
 
         Args:
             smiles(list): List of SMILES strings.
             chunk_size(int): Perform prediction on chunks of this size.
             destination(str): File path where to save predictions.
+            applicability(bool): Wether to also compute the applicability of
+                each prediction.
         Returns:
             results: `SignaturizerResult` class.
         """
@@ -129,6 +132,21 @@ class Signaturizer(object):
                         # save chunk to results dictionary
                         mdl_cols = slice(idx * 128, (idx + 1) * 128)
                         results.signature[chunk, mdl_cols] = preds
+                        if not applicability:
+                            continue
+                        # also run applicability prediction
+                        try:
+                            apred = module(sign0s, signature='applicability')
+                            apreds = sess.run(apred)
+                            if failed:
+                                apreds[np.array(failed)] = np.full(
+                                    (1, ), np.nan)
+                            # save chunk to results dictionary
+                            results.applicability[chunk, idx] = apreds.ravel()
+                        except Exception as ex:
+                            print('WARNING exception in applicability: %s'
+                                  % str(ex))
+
         results.close()
         if self.verbose:
             print('PREDICTION complete!')
@@ -169,9 +187,12 @@ class SignaturizerResult():
         if self.dst is None:
             # simple numpy arrays
             self.h5 = None
-            self.signature = np.zeros((size, features), dtype=np.float32)
-            self.dataset = np.zeros((int(features / 128),),
-                                    dtype=h5py.special_dtype(vlen=str))
+            self.signature = np.full((size, features), np.nan,
+                                     dtype=np.float32)
+            self.applicability = np.full(
+                (size, int(features / 128)), np.nan, dtype=np.float32)
+            self.dataset = np.full((int(features / 128),), np.nan,
+                                   dtype=h5py.special_dtype(vlen=str))
         else:
             # check if the file exists already
             if os.path.isfile(self.dst):
@@ -185,10 +206,14 @@ class SignaturizerResult():
                 self.h5.create_dataset(
                     'signature', (size, features), dtype=np.float32)
                 self.h5.create_dataset(
+                    'applicability', (size, int(features / 128)),
+                    dtype=np.float32)
+                self.h5.create_dataset(
                     'dataset', (int(features / 128),),
                     dtype=h5py.special_dtype(vlen=str))
             # expose the datasets
             self.signature = self.h5['signature']
+            self.applicability = self.h5['applicability']
             self.dataset = self.h5['dataset']
 
     def close(self):
@@ -199,4 +224,5 @@ class SignaturizerResult():
         self.h5 = h5py.File(self.dst, 'r')
         # expose the datasets
         self.signature = self.h5['signature']
+        self.applicability = self.h5['applicability']
         self.dataset = self.h5['dataset']
