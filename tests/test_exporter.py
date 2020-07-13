@@ -35,6 +35,53 @@ class TestSignaturizer(unittest.TestCase):
             shutil.rmtree(self.tmp_dir)
             pass
 
+    def test_export(self):
+        # export smilespred
+        version = 'vXXX'
+        module_file = 'dest_smilespred.tar.gz'
+        module_destination = os.path.join(
+            self.tmp_dir, version, module_file)
+        tmp_path_smilespred = os.path.join(self.tmp_dir, 'export_smilespred')
+        smilespred_path = os.path.join(self.data_dir, 'models', 'smiles')
+        export_smilespred(smilespred_path, module_destination,
+                          tmp_path=tmp_path_smilespred, clear_tmp=False)
+        base_url = "http://localhost:%d/" % (self.server_port)
+        module = Signaturizer(module_file, base_url=base_url, version=version)
+        res = module.predict(self.test_smiles)
+        pred = res.signature[:]
+        ref_pred_file = os.path.join(
+            self.data_dir, 'models', 'smiles_pred.npy')
+        #np.save(ref_pred_file, pred)
+        pred_ref = np.load(ref_pred_file)
+        np.testing.assert_almost_equal(pred_ref, pred)
+
+    def test_export_applicability(self):
+        # export smilespred and applicability
+        version = 'vXXX'
+        module_file = 'dest_smilespred.tar.gz'
+        module_destination = os.path.join(
+            self.tmp_dir, version, module_file)
+        tmp_path_smilespred = os.path.join(self.tmp_dir, 'export_smilespred')
+        smilespred_path = os.path.join(self.data_dir, 'models', 'smiles')
+        apppred_path = os.path.join(self.data_dir, 'models', 'applicability')
+        export_smilespred(smilespred_path, module_destination,
+                          tmp_path=tmp_path_smilespred, clear_tmp=False,
+                          applicability_path=apppred_path)
+        base_url = "http://localhost:%d/" % (self.server_port)
+        module = Signaturizer(module_file, base_url=base_url, version=version)
+        res = module.predict(self.test_smiles, applicability=True)
+        pred = res.signature[:]
+        ref_pred_file = os.path.join(
+            self.data_dir, 'models', 'smiles_pred.npy')
+        pred_ref = np.load(ref_pred_file)
+        np.testing.assert_almost_equal(pred_ref, pred)
+        apred = res.applicability[:]
+        ref_apred_file = os.path.join(
+            self.data_dir, 'models', 'applicability_pred.npy')
+        #np.save(ref_apred_file, apred)
+        apred_ref = np.load(ref_apred_file)
+        np.testing.assert_almost_equal(apred_ref, apred)
+
     @skip_if_import_exception
     def test_export_consistency(self):
         """Compare the exported module to the original SMILES predictor.

@@ -9,10 +9,12 @@ with warnings.catch_warnings():
 
 
 def export_smilespred(smilespred_path, destination,
-                      tmp_path=None, clear_tmp=True, compress=True):
+                      tmp_path=None, clear_tmp=True, compress=True,
+                      applicability_path=None):
     """Export our Keras Smiles predictor to the TF-hub module format."""
     from keras import backend as K
     from chemicalchecker.tool.smilespred import Smilespred
+    from chemicalchecker.tool.smilespred import ApplicabilityPredictor
 
     if tmp_path is None:
         tmp_path = tempfile.mkdtemp()
@@ -34,13 +36,22 @@ def export_smilespred(smilespred_path, destination,
         '''
         signature = tf.saved_model.signature_def_utils.predict_signature_def(
             inputs={'default': model.input}, outputs={'default': model.output})
+        signature_def_map = {'serving_default': signature}
+        if applicability_path is not None:
+            app_pred = ApplicabilityPredictor(applicability_path)
+            app_pred.build_model(load=True)
+            app_model = app_pred.model
+            signature_app = tf.saved_model.signature_def_utils.predict_signature_def(
+                inputs={'default': app_model.input},
+                outputs={'default': app_model.output})
+            signature_def_map.update({'applicability': signature_app})
         if tmp_path is None:
             tmp_path = tempfile.mkdtemp()
         builder = tf.saved_model.builder.SavedModelBuilder(tmp_path)
         builder.add_meta_graph_and_variables(
             sess=K.get_session(),
             tags=['serve'],
-            signature_def_map={'serving_default': signature})
+            signature_def_map=signature_def_map)
         builder.save()
     # now export savedmodel to module
     export_savedmodel(tmp_path, destination, compress=compress)
