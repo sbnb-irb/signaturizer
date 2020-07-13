@@ -46,7 +46,7 @@ pip install git+http://gitlabsbnb.irbbarcelona.org/packages/signaturizer.git
 
 
 
-## Usage
+## Basic Usage
 
 
 ### Generating Bioactivity Signatures
@@ -70,31 +70,9 @@ print(results.signature.shape)
 results = sign.predict(smiles, 'destination.h5')
 ```
 
-### Generating multiple Signatures in one batch
-```python
-from signaturizer import Signaturizer
-# load the predictor for any CC space in any order
-sign = Signaturizer(['B1', 'E4', 'A5', 'D3'])
-# prepare a list of SMILES strings
-smiles = ['C', 'CCC']
-# run prediction
-results = sign.predict(smiles)
-print(results.signature.shape)
-# (2, 512)
-```
+## Advanced usage
 
-### Generating Global Bioactivity Signatures
-```python
-from signaturizer import Signaturizer
-# load the bioactivity space predictor for all space
-sign = Signaturizer('GLOBAL')
-# prepare a list of SMILES strings
-smiles = ['C', 'CCC']
-# run prediction
-results = sign.predict(smiles)
-print(results.signature.shape)
-# (2, 3200)
-```
+For an exemplary application please check the ipython [notebook](http://gitlabsbnb.irbbarcelona.org/packages/signaturizer/blob/master/notebook/foodb_analysis.ipynb) in the `notebook` directory
 
 
 ## Citing
