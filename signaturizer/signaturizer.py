@@ -22,7 +22,7 @@ class Signaturizer(object):
 
     def __init__(self, model_name,
                  base_url="http://chemicalchecker.com/api/db/getSignaturizer/",
-                 version='v1', local=False, tf_version='1', verbose=False):
+                 version='v1.1', local=False, tf_version='1', verbose=False):
         """Initialize the Signaturizer.
 
         Args:
