@@ -35,6 +35,7 @@ class TestSignaturizer(unittest.TestCase):
             shutil.rmtree(self.tmp_dir)
             pass
 
+    @skip_if_import_exception
     def test_export(self):
         # export smilespred
         version = 'vXXX'
@@ -55,6 +56,7 @@ class TestSignaturizer(unittest.TestCase):
         pred_ref = np.load(ref_pred_file)
         np.testing.assert_almost_equal(pred_ref, pred)
 
+    @skip_if_import_exception
     def test_export_applicability(self):
         # export smilespred and applicability
         version = 'vXXX'
