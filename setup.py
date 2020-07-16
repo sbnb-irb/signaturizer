@@ -1,9 +1,9 @@
 import setuptools
 from setuptools import find_packages
-
+import signaturizer
 
 setuptools.setup(name='signaturizer',
-                 version='1.1.1',
+                 version=signaturizer.__version__,
                  description='Generate Chemical Checker signatures from molecules SMILES.',
                  long_description=open('README.md').read().strip(),
                  long_description_content_type="text/markdown",
@@ -18,7 +18,7 @@ setuptools.setup(name='signaturizer',
                                    'h5py'],
                  license='MIT License',
                  zip_safe=False,
-                 keywords='signaturizer package',
+                 keywords='signaturizer bioactivity signatures chemicalchecker',
                  classifiers=[
                      "License :: OSI Approved :: MIT License",
                      "Programming Language :: Python :: 2",
