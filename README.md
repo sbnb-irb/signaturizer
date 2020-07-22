@@ -80,9 +80,9 @@ For an exemplary application please check the ipython [notebook](http://gitlabsb
 If you use this resource in the course of your research, please consider citing 
 these papers:
 
-    Bertoni M, et al  "Bioactivity descriptors for uncharacterized compounds." BioaRXiv (2020) [[link]](https://biorxiv.org/cgi/content/short/2020.07.21.214197v1)
+* Bertoni M, et al  "Bioactivity descriptors for uncharacterized compounds." BioaRXiv (2020) [[link]](https://biorxiv.org/cgi/content/short/2020.07.21.214197v1)
 
-    Duran-Frigola M, et al "Extending the small-molecule similarity principle to all levels of biology with the Chemical Checker."" Nature Biotechnology (2020) [[link]](https://www.nature.com/articles/s41587-020-0502-7)
+* Duran-Frigola M, et al "Extending the small-molecule similarity principle to all levels of biology with the Chemical Checker."" Nature Biotechnology (2020) [[link]](https://www.nature.com/articles/s41587-020-0502-7)
 
 
 
