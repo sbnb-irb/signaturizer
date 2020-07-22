@@ -82,15 +82,34 @@ these papers:
 
 
 > Bertoni M, et al
+>
 > "Bioactivity descriptors for uncharacterized compounds."
+>
 > BioaRXiv (2020) [[link]](https://biorxiv.org/cgi/content/short/2020.07.21.214197v1)
 
 > Duran-Frigola M, et al
+>
 > "Extending the small-molecule similarity principle to all levels of biology with the Chemical Checker."
+>
 > Nature Biotechnology (2020) [[link]](https://www.nature.com/articles/s41587-020-0502-7)
 
 
 You can use this bibtex entry:
+
+```
+@article {Bertoni2020,
+    author = {Bertoni, Martino and Duran-Frigola, Miquel and Badia-i-Mompel, Pau and Orozco-Ruiz, Modesto and Guitart-Pla, Oriol and Aloy, Patrick},
+    title = {Bioactivity descriptors for uncharacterized compounds},
+    elocation-id = {2020.07.21.214197},
+    year = {2020},
+    doi = {10.1101/2020.07.21.214197},
+    publisher = {Cold Spring Harbor Laboratory},
+    abstract = {Chemical descriptors encode the physicochemical and structural properties of small molecules, and they are at the core of chemoinformatics. The broad release of bioactivity data has prompted enriched representations of compounds, reaching beyond chemical structures and capturing their known biological properties. Unfortunately, bioactivity descriptors are not available for most small molecules, which limits their applicability to a few thousand well characterized compounds. Here we present a collection of deep neural networks able to infer bioactivity signatures for any compound of interest, even when little or no experimental information is available for them. Our signaturizers relate to bioactivities of 25 different types (including target profiles, cellular response and clinical outcomes) and can be used as drop-in replacements for chemical descriptors in day-to-day chemoinformatics tasks. Indeed, we illustrate how inferred bioactivity signatures are useful to navigate the chemical space in a biologically relevant manner, and unveil higher-order organization in drugs and natural product collections. Moreover, we implement a battery of signature-activity relationship (SigAR) models and show a substantial improvement in performance, with respect to chemistry-based classifiers, across a series of biophysics and physiology activity prediction benchmarks.Competing Interest StatementThe authors have declared no competing interest.},
+    URL = {https://www.biorxiv.org/content/early/2020/07/21/2020.07.21.214197},
+    eprint = {https://www.biorxiv.org/content/early/2020/07/21/2020.07.21.214197.full.pdf},
+    journal = {bioRxiv}
+}
+```
 
 ```
 ﻿@Article{Duran-Frigola2020,
