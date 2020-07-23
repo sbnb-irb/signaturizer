@@ -75,10 +75,10 @@ class Signaturizer(object):
 
         Args:
             smiles(list): List of SMILES strings.
-            chunk_size(int): Perform prediction on chunks of this size.
             destination(str): File path where to save predictions.
             applicability(bool): Wether to also compute the applicability of
                 each prediction.
+            chunk_size(int): Perform prediction on chunks of this size.
         Returns:
             results: `SignaturizerResult` class.
         """
@@ -150,6 +150,11 @@ class Signaturizer(object):
         results.close()
         if self.verbose:
             print('PREDICTION complete!')
+        if failed:
+            print('The following SMILES could not be recognized,'
+                  ' the corresponding signatures are NaN')
+            for idx in failed:
+                print(smiles[idx])
         return results
 
     @staticmethod
