@@ -46,7 +46,7 @@ pip install git+http://gitlabsbnb.irbbarcelona.org/packages/signaturizer.git
 
 
 
-## Intro
+## Basic Usage
 
 
 ### Generating Bioactivity Signatures
@@ -70,7 +70,7 @@ print(results.signature.shape)
 results = sign.predict(smiles, 'destination.h5')
 ```
 
-## Usage
+## Adavenced Usage
 
 For an exemplary application please check the ipython [notebook](http://gitlabsbnb.irbbarcelona.org/packages/signaturizer/blob/master/notebook/signaturizer.ipynb) in the `notebook` directory (you can download it and run on [Google Colab](https://colab.research.google.com/notebooks/))
 
@@ -81,17 +81,19 @@ If you use this resource in the course of your research, please consider citing
 these papers:
 
 
-> Bertoni M, et al
->
-> "Bioactivity descriptors for uncharacterized compounds."
->
-> BioaRXiv (2020) [[link]](https://biorxiv.org/cgi/content/short/2020.07.21.214197v1)
+    Bertoni M, et al
 
-> Duran-Frigola M, et al
->
-> "Extending the small-molecule similarity principle to all levels of biology with the Chemical Checker."
->
-> Nature Biotechnology (2020) [[link]](https://www.nature.com/articles/s41587-020-0502-7)
+    "Bioactivity descriptors for uncharacterized compounds."
+
+    BioaRXiv (2020) [[link]](https://biorxiv.org/cgi/content/short/2020.07.21.214197v1)
+
+
+
+    Duran-Frigola M, et al
+    
+    "Extending the small-molecule similarity principle to all levels of biology with the Chemical Checker."
+    
+    Nature Biotechnology (2020) [[link]](https://www.nature.com/articles/s41587-020-0502-7)
 
 
 You can use this bibtex entry:
