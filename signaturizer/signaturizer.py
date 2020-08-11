@@ -7,8 +7,11 @@ from tqdm import tqdm
 import warnings
 with warnings.catch_warnings():
     warnings.filterwarnings("ignore", category=FutureWarning)
+    warnings.filterwarnings("ignore", category=DeprecationWarning)
     import tensorflow.compat.v1 as tf
     import tensorflow_hub as hub
+    from tensorflow.keras.models import Model
+    from tensorflow.keras import Input
 try:
     from rdkit import Chem
     from rdkit.Chem import AllChem
@@ -16,13 +19,15 @@ except ImportError:
     raise ImportError("requires RDKit " +
                       "https://www.rdkit.org/docs/Install.html")
 
+tf.logging.set_verbosity(tf.logging.ERROR)
 
 class Signaturizer(object):
     """Class loading TF-hub module and performing predictions."""
 
     def __init__(self, model_name,
                  base_url="http://chemicalchecker.com/api/db/getSignaturizer/",
-                 version='v1.1', local=False, tf_version='1', verbose=False):
+                 version='v1.1', local=False, tf_version='1', verbose=False,
+                 applicability=True):
         """Initialize the Signaturizer.
 
         Args:
@@ -38,115 +43,120 @@ class Signaturizer(object):
                 interpreted as a path to a local model.
             tf_version(int): The Tesorflow version.
             verbose(bool): If True some more information will be printed.
+            applicability(bool): Wether to also compute the applicability of
+                each prediction.
         """
         self.verbose = verbose
+        self.applicability = applicability
         if not isinstance(model_name, list):
             if model_name.upper() == 'GLOBAL':
-                models = [y + x for y in 'ABCDE' for x in '12345']
+                self.model_names = [y + x for y in 'ABCDE' for x in '12345']
             else:
-                models = [model_name]
+                self.model_names = [model_name]
         else:
-            models = model_name
-        # load modules
-        self.model_names = list()
-        self.modules = list()
-        self.graph = tf.Graph()
-        with self.graph.as_default():
-            for model in models:
-                if local:
-                    if os.path.isdir(model):
-                        if self.verbose:
-                            print('LOADING local:', model)
-                        spec = hub.create_module_spec_from_saved_model(model)
-                        module = hub.Module(spec, tags=['serve'])
-                    else:
-                        raise Exception('Module path not found!')
-                else:
-                    url = base_url + '%s/%s' % (version, model)
+            self.model_names = model_name
+        # load modules as layer to compose a new model
+        main_input = Input(shape=(2048,), dtype=tf.float32, name='main_input')
+        sign_output = list()
+        app_output = list()
+        as_dict = False
+        if len(self.model_names) == 1:
+            as_dict = True
+        for name in self.model_names:
+            # build module spec
+            if local:
+                if os.path.isdir(name):
+                    url = name
                     if self.verbose:
-                        print('LOADING remote:', url)
-                    module = hub.Module(url, tags=['serve'])
-                self.modules.append(module)
-                self.model_names.append(model)
+                        print('LOADING local:', url)
+                else:
+                    raise Exception('Module path not found!')
+            else:
+                url = base_url + '%s/%s' % (version, name)
+                if self.verbose:
+                    print('LOADING remote:', url)
 
-    def predict(self, smiles, destination=None, applicability=False,
-                chunk_size=1000):
+            sign_layer = hub.KerasLayer(url, signature='serving_default',
+                                        trainable=False, tags=['serve'],
+                                        signature_outputs_as_dict=as_dict)
+            sign_output.append(sign_layer(main_input))
+
+            if self.applicability:
+                try:
+                    app_layer = hub.KerasLayer(url, signature='applicability',
+                                               trainable=False, tags=['serve'],
+                                               signature_outputs_as_dict=as_dict)
+                    app_output.append(app_layer(main_input))
+                except Exception as ex:
+                    print('WARNING: applicability predictions not available.')
+                    self.applicability = False
+        # join signature output and prepare model
+        if len(sign_output) > 1:
+            sign_output = tf.keras.layers.concatenate(sign_output)
+        self.model = Model(inputs=main_input, outputs=sign_output)
+        # same for applicability
+        if self.applicability:
+            if len(app_output) > 1:
+                app_output = tf.keras.layers.concatenate(app_output)
+            self.app_model = Model(inputs=main_input, outputs=app_output)
+
+    def predict(self, smiles, destination=None, chunk_size=1000):
         """Predict signatures for given SMILES.
 
         Args:
             smiles(list): List of SMILES strings.
             destination(str): File path where to save predictions.
-            applicability(bool): Wether to also compute the applicability of
-                each prediction.
             chunk_size(int): Perform prediction on chunks of this size.
         Returns:
             results: `SignaturizerResult` class.
         """
-        with self.graph.as_default():
-            with tf.Session() as sess:
-                sess.run(tf.tables_initializer())
-                sess.run(tf.global_variables_initializer())
-                # Prepare result object
-                features = len(self.modules) * 128
-                results = SignaturizerResult(len(smiles), destination,
-                                             features)
-                results.dataset[:] = self.model_names
-                if results.readonly:
-                    raise Exception(
-                        'Destination file already exists, ' +
-                        'delete or rename to proceed.')
-                # predict by chunk
-                all_chunks = range(0, len(smiles), chunk_size)
-                for i in tqdm(all_chunks, disable=not self.verbose):
-                    chunk = slice(i, i + chunk_size)
-                    sign0s = list()
-                    failed = list()
-                    for idx, mol_smiles in enumerate(smiles[chunk]):
-                        try:
-                            # read SMILES as molecules
-                            mol = Chem.MolFromSmiles(mol_smiles)
-                            if mol is None:
-                                raise Exception(
-                                    "Cannot get molecule from smiles.")
-                            info = {}
-                            fp = AllChem.GetMorganFingerprintAsBitVect(
-                                mol, 2, nBits=2048, bitInfo=info)
-                            bin_s0 = [fp.GetBit(i) for i in range(
-                                fp.GetNumBits())]
-                            calc_s0 = np.array(bin_s0).astype(np.float32)
-                        except Exception as err:
-                            # in case of failure save idx to fill NaNs
-                            print("SKIPPING %s: %s" % (mol_smiles, str(err)))
-                            failed.append(idx)
-                            calc_s0 = np.full((2048, ),  np.nan)
-                        finally:
-                            sign0s.append(calc_s0)
-                    # stack input fingerprints and run predictor
-                    sign0s = np.vstack(sign0s)
-                    for idx, module in enumerate(self.modules):
-                        pred = module(sign0s, signature='serving_default')
-                        preds = sess.run(pred)
-                        # add NaN where SMILES conversion failed
-                        if failed:
-                            preds[np.array(failed)] = np.full((128, ),  np.nan)
-                        # save chunk to results dictionary
-                        mdl_cols = slice(idx * 128, (idx + 1) * 128)
-                        results.signature[chunk, mdl_cols] = preds
-                        if not applicability:
-                            continue
-                        # also run applicability prediction
-                        try:
-                            apred = module(sign0s, signature='applicability')
-                            apreds = sess.run(apred)
-                            if failed:
-                                apreds[np.array(failed)] = np.full(
-                                    (1, ), np.nan)
-                            # save chunk to results dictionary
-                            results.applicability[chunk, idx] = apreds.ravel()
-                        except Exception as ex:
-                            print('WARNING exception in applicability: %s'
-                                  % str(ex))
-
+        # Prepare result object
+        features = len(self.model_names) * 128
+        results = SignaturizerResult(len(smiles), destination, features)
+        results.dataset[:] = self.model_names
+        if results.readonly:
+            raise Exception(
+                'Destination file already exists, ' +
+                'delete or rename to proceed.')
+        # predict by chunk
+        all_chunks = range(0, len(smiles), chunk_size)
+        for i in tqdm(all_chunks, disable=not self.verbose):
+            chunk = slice(i, i + chunk_size)
+            sign0s = list()
+            failed = list()
+            for idx, mol_smiles in enumerate(smiles[chunk]):
+                try:
+                    # read SMILES as molecules
+                    mol = Chem.MolFromSmiles(mol_smiles)
+                    if mol is None:
+                        raise Exception(
+                            "Cannot get molecule from smiles.")
+                    info = {}
+                    fp = AllChem.GetMorganFingerprintAsBitVect(
+                        mol, 2, nBits=2048, bitInfo=info)
+                    bin_s0 = [fp.GetBit(i) for i in range(
+                        fp.GetNumBits())]
+                    calc_s0 = np.array(bin_s0).astype(np.float32)
+                except Exception as err:
+                    # in case of failure save idx to fill NaNs
+                    print("SKIPPING %s: %s" % (mol_smiles, str(err)))
+                    failed.append(idx)
+                    calc_s0 = np.full((2048, ),  np.nan)
+                finally:
+                    sign0s.append(calc_s0)
+            # stack input fingerprints and run signature predictor
+            sign0s = np.vstack(sign0s)
+            preds = self.model.predict(sign0s)
+            # add NaN where SMILES conversion failed
+            if failed:
+                preds[np.array(failed)] = np.full(features,  np.nan)
+            results.signature[chunk] = preds
+            # run applicability predictor
+            if self.applicability:
+                apreds = self.app_model.predict(sign0s)
+                if failed:
+                    apreds[np.array(failed)] = np.full(features,  np.nan)
+                results.applicability[chunk] = apreds
         results.close()
         if self.verbose:
             print('PREDICTION complete!')
@@ -192,11 +202,11 @@ class SignaturizerResult():
         if self.dst is None:
             # simple numpy arrays
             self.h5 = None
-            self.signature = np.full((size, features), np.nan,
+            self.signature = np.full((size, features), np.nan, order='F',
                                      dtype=np.float32)
             self.applicability = np.full(
-                (size, int(features / 128)), np.nan, dtype=np.float32)
-            self.dataset = np.full((int(features / 128),), np.nan,
+                (size, int(np.ceil(features / 128))), np.nan, dtype=np.float32)
+            self.dataset = np.full((int(np.ceil(features / 128)),), np.nan,
                                    dtype=h5py.special_dtype(vlen=str))
         else:
             # check if the file exists already
@@ -211,10 +221,10 @@ class SignaturizerResult():
                 self.h5.create_dataset(
                     'signature', (size, features), dtype=np.float32)
                 self.h5.create_dataset(
-                    'applicability', (size, int(features / 128)),
+                    'applicability', (size, int(np.ceil(features / 128))),
                     dtype=np.float32)
                 self.h5.create_dataset(
-                    'dataset', (int(features / 128),),
+                    'dataset', (int(np.ceil(features / 128)),),
                     dtype=h5py.special_dtype(vlen=str))
             # expose the datasets
             self.signature = self.h5['signature']
