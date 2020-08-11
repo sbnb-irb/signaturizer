@@ -10,8 +10,8 @@ with warnings.catch_warnings():
     warnings.filterwarnings("ignore", category=DeprecationWarning)
     import tensorflow.compat.v1 as tf
     import tensorflow_hub as hub
-    from tensorflow.keras.models import Model
-    from tensorflow.keras import Input
+    from tensorflow.compat.v1.keras.models import Model
+    from tensorflow.compat.v1.keras import Input
 try:
     from rdkit import Chem
     from rdkit.Chem import AllChem
@@ -20,6 +20,7 @@ except ImportError:
                       "https://www.rdkit.org/docs/Install.html")
 
 tf.logging.set_verbosity(tf.logging.ERROR)
+
 
 class Signaturizer(object):
     """Class loading TF-hub module and performing predictions."""
@@ -60,8 +61,10 @@ class Signaturizer(object):
         sign_output = list()
         app_output = list()
         as_dict = False
+        output_key = 'default'
         if len(self.model_names) == 1:
             as_dict = True
+            output_key = None
         for name in self.model_names:
             # build module spec
             if local:
@@ -77,18 +80,22 @@ class Signaturizer(object):
                     print('LOADING remote:', url)
 
             sign_layer = hub.KerasLayer(url, signature='serving_default',
-                                        trainable=False, tags=['serve'],
+                                        trainable=False,  tags=['serve'],
+                                        output_key=output_key,
                                         signature_outputs_as_dict=as_dict)
             sign_output.append(sign_layer(main_input))
 
             if self.applicability:
                 try:
-                    app_layer = hub.KerasLayer(url, signature='applicability',
-                                               trainable=False, tags=['serve'],
-                                               signature_outputs_as_dict=as_dict)
+                    app_layer = hub.KerasLayer(
+                        url, signature='applicability',
+                        trainable=False, tags=['serve'],
+                        output_key=output_key,
+                        signature_outputs_as_dict=as_dict)
                     app_output.append(app_layer(main_input))
                 except Exception as ex:
-                    print('WARNING: applicability predictions not available.')
+                    print('WARNING: applicability predictions not available. '
+                          + str(ex))
                     self.applicability = False
         # join signature output and prepare model
         if len(sign_output) > 1:
@@ -118,6 +125,7 @@ class Signaturizer(object):
             raise Exception(
                 'Destination file already exists, ' +
                 'delete or rename to proceed.')
+
         # predict by chunk
         all_chunks = range(0, len(smiles), chunk_size)
         for i in tqdm(all_chunks, disable=not self.verbose):
