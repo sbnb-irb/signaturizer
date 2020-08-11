@@ -83,6 +83,7 @@ class Signaturizer(object):
                                         trainable=False,  tags=['serve'],
                                         output_key=output_key,
                                         signature_outputs_as_dict=as_dict)
+            sign_layer._is_hub_module_v1 = True
             sign_output.append(sign_layer(main_input))
 
             if self.applicability:
@@ -92,6 +93,7 @@ class Signaturizer(object):
                         trainable=False, tags=['serve'],
                         output_key=output_key,
                         signature_outputs_as_dict=as_dict)
+                    app_layer._is_hub_module_v1 = True
                     app_output.append(app_layer(main_input))
                 except Exception as ex:
                     print('WARNING: applicability predictions not available. '
