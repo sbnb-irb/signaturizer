@@ -70,8 +70,9 @@ class TestSignaturizer(unittest.TestCase):
                           tmp_path=tmp_path_smilespred, clear_tmp=False,
                           applicability_path=apppred_path)
         base_url = "http://localhost:%d/" % (self.server_port)
-        module = Signaturizer(module_file, base_url=base_url, version=version)
-        res = module.predict(self.test_smiles, applicability=True)
+        module = Signaturizer(module_file, base_url=base_url, version=version,
+                              applicability=True)
+        res = module.predict(self.test_smiles)
         pred = res.signature[:]
         ref_pred_file = os.path.join(
             self.data_dir, 'models', 'smiles_pred.npy')
