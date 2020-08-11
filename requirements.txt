@@ -1,7 +1,7 @@
 pytest
 pytest-cov
 numpy
-tensorflow
+tensorflow==2.2.0
 tensorflow_hub
 h5py
 tqdm
