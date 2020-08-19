@@ -147,7 +147,8 @@ class Signaturizer(object):
                     calc_s0 = np.array(bin_s0).astype(np.float32)
                 except Exception as err:
                     # in case of failure save idx to fill NaNs
-                    print("SKIPPING %s: %s" % (mol_smiles, str(err)))
+                    if self.verbose:
+                        print("SKIPPING %s: %s" % (mol_smiles, str(err)))
                     failed.append(idx)
                     calc_s0 = np.full((2048, ),  np.nan)
                 finally:
@@ -163,16 +164,19 @@ class Signaturizer(object):
             if self.applicability:
                 apreds = self.app_model.predict(sign0s)
                 if failed:
-                    apreds[np.array(failed)] = np.full(features,  np.nan)
+                    apreds[np.array(failed)] = np.nan
                 results.applicability[chunk] = apreds
         results.close()
         if self.verbose:
             print('PREDICTION complete!')
-        if failed:
-            print('The following SMILES could not be recognized,'
+        failed = np.isnan(results.signature[:, 0])
+        results.failed = failed
+        if any(failed) > 0:
+            print('Some SMILES could not be recognized,'
                   ' the corresponding signatures are NaN')
-            for idx in failed:
-                print(smiles[idx])
+            if self.verbose:
+                for idx in np.argwhere(failed).flatten():
+                    print(smiles[idx])
         return results
 
     @staticmethod
@@ -216,6 +220,7 @@ class SignaturizerResult():
                 (size, int(np.ceil(features / 128))), np.nan, dtype=np.float32)
             self.dataset = np.full((int(np.ceil(features / 128)),), np.nan,
                                    dtype=h5py.special_dtype(vlen=str))
+            self.failed = np.full((size, ), False, dtype=np.bool)
         else:
             # check if the file exists already
             if os.path.isfile(self.dst):
@@ -234,10 +239,14 @@ class SignaturizerResult():
                 self.h5.create_dataset(
                     'dataset', (int(np.ceil(features / 128)),),
                     dtype=h5py.special_dtype(vlen=str))
+                self.h5.create_dataset(
+                    'failed', (size,),
+                    dtype=np.bool)
             # expose the datasets
             self.signature = self.h5['signature']
             self.applicability = self.h5['applicability']
             self.dataset = self.h5['dataset']
+            self.failed = self.h5['failed']
 
     def close(self):
         if self.h5 is None:
@@ -249,3 +258,4 @@ class SignaturizerResult():
         self.signature = self.h5['signature']
         self.applicability = self.h5['applicability']
         self.dataset = self.h5['dataset']
+        self.failed = self.h5['failed']
