@@ -83,6 +83,7 @@ class TestSignaturizer(unittest.TestCase):
             self.assertTrue(math.isnan(comp))
         for comp in res.signature[2]:
             self.assertFalse(math.isnan(comp))
+        self.assertTrue(all(res.failed == [False, True, False]))
 
     def test_predict_global_remote(self):
         module = Signaturizer('GLOBAL')
