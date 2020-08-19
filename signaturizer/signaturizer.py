@@ -14,6 +14,7 @@ with warnings.catch_warnings():
     from tensorflow.compat.v1.keras import Input
 try:
     from rdkit import Chem
+    from rdkit import RDLogger
     from rdkit.Chem import AllChem
 except ImportError:
     raise ImportError("requires RDKit " +
@@ -106,6 +107,11 @@ class Signaturizer(object):
             if len(app_output) > 1:
                 app_output = tf.keras.layers.concatenate(app_output)
             self.app_model = Model(inputs=main_input, outputs=app_output)
+        # set rdKit verbosity
+        if self.verbose:
+            RDLogger.EnableLog('rdApp.*')
+        else:
+            RDLogger.DisableLog('rdApp.*')
 
     def predict(self, smiles, destination=None, chunk_size=1000):
         """Predict signatures for given SMILES.
