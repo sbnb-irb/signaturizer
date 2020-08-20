@@ -1,15 +1,14 @@
-import setuptools
-from setuptools import find_packages
+from setuptools import setup, find_packages
 import signaturizer
 
-setuptools.setup(
+setup(
     name='signaturizer',
     version=signaturizer.__version__,
+    author=signaturizer.__author__,
+    author_email=signaturizer.__email__,
     description='Generate Chemical Checker signatures from molecules SMILES.',
     long_description=open('README.md').read().strip(),
     long_description_content_type="text/markdown",
-    author='Martino Bertoni',
-    author_email='martino.bertoni@irbarcelona.org',
     url='http://gitlabsbnb.irbbarcelona.org/packages/signaturizer',
     py_modules=find_packages(),
     packages=find_packages(),
@@ -18,9 +17,9 @@ setuptools.setup(
         'tensorflow_hub',
         'numpy',
         'h5py'],
-    license='MIT License',
     zip_safe=False,
-    keywords='signaturizer bioactivity signatures chemicalchecker',
+    license='MIT License',
+    keywords='signaturizer bioactivity signatures chemicalchecker chemoinformatics',
     classifiers=[
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python :: 2",

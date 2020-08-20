@@ -1,4 +1,4 @@
-# using the module
+"""Signaturize molecules."""
 import os
 import h5py
 import shutil
@@ -24,13 +24,16 @@ tf.logging.set_verbosity(tf.logging.ERROR)
 
 
 class Signaturizer(object):
-    """Class loading TF-hub module and performing predictions."""
+    """Signaturizer Class.
+
+    Loads TF-hub module, compose a single model, handle verbosity.
+    """
 
     def __init__(self, model_name,
                  base_url="http://chemicalchecker.com/api/db/getSignaturizer/",
                  version='v1.1', local=False, tf_version='1', verbose=False,
                  applicability=True):
-        """Initialize the Signaturizer.
+        """Initialize a Signaturizer instance.
 
         Args:
             model(str): The model to load. Possible values:
@@ -81,7 +84,7 @@ class Signaturizer(object):
                     print('LOADING remote:', url)
 
             sign_layer = hub.KerasLayer(url, signature='serving_default',
-                                        trainable=False,  tags=['serve'],
+                                        trainable=False, tags=['serve'],
                                         output_key=output_key,
                                         signature_outputs_as_dict=as_dict)
             sign_output.append(sign_layer(main_input))
@@ -116,12 +119,18 @@ class Signaturizer(object):
     def predict(self, smiles, destination=None, chunk_size=1000):
         """Predict signatures for given SMILES.
 
+        Perform signature prediction for input SMILES. We recommend that the
+        list is sorted and non-redundant, but this is optional. Some input
+        SMILES might be impossible to interpret, in this case, no prediction
+        is possible and the corresponding signature will be set to NaN.
+
         Args:
             smiles(list): List of SMILES strings.
             destination(str): File path where to save predictions.
             chunk_size(int): Perform prediction on chunks of this size.
         Returns:
-            results: `SignaturizerResult` class.
+            results: `SignaturizerResult` class. The ordering of input SMILES
+                is preserved.
         """
         # Prepare result object
         features = len(self.model_names) * 128
@@ -198,22 +207,29 @@ class Signaturizer(object):
 
 
 class SignaturizerResult():
-    """Class storing result of the prediction.
+    """SignaturizerResult class.
 
-    Results are stored in the following numpy vector:
-        signatures: 128 float32 defining the molecule signature.
+    Contain result of a prediction.Results are stored in the following
+    numpy vector:
+
+        * ``signatures``: Float matrix where each row is a molecule signature.
+        * ``applicability``: Float array with applicability score.
+        * ``dataset``: List of bioactivity dataset used.
+        * ``failed``: Mask for failed molecules.
 
     If a destination is specified the result are saved in an HDF5 file with
     the same vector available as HDF5 datasets.
     """
 
     def __init__(self, size, destination, features=128):
-        """Initialize the result containers.
+        """Initialize a SignaturizerResult instance.
 
         Args:
-            size(int): The number of molecules being signaturized.
-            destination(str): Path to HDF5 file where prediction results will
+            size (int): The number of molecules being signaturized.
+            destination (str): Path to HDF5 file where prediction results will
                 be saved.
+            features (int, optional): how many feature have to be stored.
+
         """
         self.dst = destination
         self.readonly = False
