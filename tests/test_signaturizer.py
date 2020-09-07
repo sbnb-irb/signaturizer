@@ -90,7 +90,7 @@ class TestSignaturizer(unittest.TestCase):
         self.assertTrue(all(res.failed == [False, True, False]))
 
     def test_predict_global_remote(self):
-        module = Signaturizer('GLOBAL')
+        module = Signaturizer(['GLOBAL'])
         res = module.predict(self.test_smiles)
         self.assertEqual(res.signature.shape[0], 2)
         self.assertEqual(res.signature.shape[1], 128 * 25)
