@@ -25,10 +25,14 @@ class TestSignaturizer(unittest.TestCase):
             'CN(C)CCOC(C1=CC=CC=C1)C2=CC=CC=C2'
         ]
         self.invalid_smiles = ['C', 'C&', 'C']
+        self.tautomer_smiles = ['CC(O)=Nc1ccc(O)cc1', 'CC(=O)NC1=CC=C(C=C1)O']
+        self.inchi = [
+            'InChI=1S/C8H9NO2/c1-6(10)9-7-2-4-8(11)5-3-7/h2-5,11H,1H3,(H,9,10)'
+        ]
 
     def tearDown(self):
         if os.path.exists(self.tmp_dir):
-            shutil.rmtree(self.tmp_dir)
+            shutil.rmtree(self.tmp_dir, ignore_errors=True)
             pass
 
     def test_predict(self):
@@ -99,3 +103,22 @@ class TestSignaturizer(unittest.TestCase):
         # repeating writing will result in an exception
         with self.assertRaises(Exception):
             module.predict(self.test_smiles, destination)
+
+    def test_tautomers(self):
+        module = Signaturizer('A1')
+        res = module.predict(self.tautomer_smiles)
+        self.assertTrue(all(res.signature[0] == res.signature[1]))
+
+    def test_inchi(self):
+        module = Signaturizer('A1')
+        res_inchi = module.predict(self.inchi, keytype='InChI')
+        res_smiles = module.predict([self.tautomer_smiles[0]])
+        self.assertTrue(all(res_inchi.signature[0] == res_smiles.signature[0]))
+
+    def test_all_single(self):
+        module = Signaturizer('A1')
+        res_all = module.predict(self.test_smiles)
+        for idx, smile in enumerate(self.test_smiles):
+            res_single = module.predict([smile])
+            self.assertTrue(
+                all(res_all.signature[idx] == res_single.signature[0]))
