@@ -59,7 +59,12 @@ class Signaturizer(object):
             else:
                 self.model_names = [model_name]
         else:
-            self.model_names = model_name
+            if model_name == ['GLOBAL']:
+                self.model_names = [y + x for y in 'ABCDE' for x in '12345']
+            else:
+                if 'GLOBAL' in model_name:
+                    raise Exception('"GLOBAL" model can only be used alone.')
+                self.model_names = model_name
         # load modules as layer to compose a new model
         main_input = Input(shape=(2048,), dtype=tf.float32, name='main_input')
         sign_output = list()
