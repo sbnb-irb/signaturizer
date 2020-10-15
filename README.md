@@ -27,7 +27,7 @@ The installation procedure takes less than 5 minutes.
 ### Conda environment
 
 ```bash
-conda create --no-default-packages -n sign -y python
+conda create --no-default-packages -n sign -y python=3.7
 conda activate sign
 conda install -c conda-forge -y rdkit
 ```
