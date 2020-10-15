@@ -22,7 +22,7 @@ the original Chemical Checker
 
 The only strong dependency for this resource is [RDKit](https://www.rdkit.org/docs/Install.html)
 which can be installed in a local conda environment.
-
+The installation procedure takes less than 5 minutes.
 
 ### Conda environment
 
@@ -45,9 +45,7 @@ pip install git+http://gitlabsbnb.irbbarcelona.org/packages/signaturizer.git
 ```
 
 
-
 ## Basic Usage
-
 
 ### Generating Bioactivity Signatures
 
@@ -70,7 +68,11 @@ print(results.signature.shape)
 results = sign.predict(smiles, 'destination.h5')
 ```
 
-## Adavenced Usage
+## Speed
+
+Generating 1000 signatures for one bioactivity spaces takes less than 4 seconds on an average machine with 4 cores.
+
+## Advanced Usage
 
 For an exemplary application please check the ipython [notebook](http://gitlabsbnb.irbbarcelona.org/packages/signaturizer/blob/master/notebook/signaturizer.ipynb) in the `notebook` directory (you can download it and run on [Google Colab](https://colab.research.google.com/notebooks/))
 
