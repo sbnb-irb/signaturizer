@@ -1,11 +1,14 @@
 from setuptools import setup, find_packages
-import signaturizer
+
+__author__ = """Martino Bertoni"""
+__email__ = 'martino.bertoni@irbbarcelona.org'
+__version__ = '1.1.5'
 
 setup(
     name='signaturizer',
-    version=signaturizer.__version__,
-    author=signaturizer.__author__,
-    author_email=signaturizer.__email__,
+    version=__version__,
+    author=__author__,
+    author_email=__email__,
     description='Generate Chemical Checker signatures from molecules SMILES.',
     long_description=open('README.md').read().strip(),
     long_description_content_type="text/markdown",
