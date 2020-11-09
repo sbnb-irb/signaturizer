@@ -120,5 +120,5 @@ class TestSignaturizer(unittest.TestCase):
         res_all = module.predict(self.test_smiles)
         for idx, smile in enumerate(self.test_smiles):
             res_single = module.predict([smile])
-            self.assertTrue(
-                all(res_all.signature[idx] == res_single.signature[0]))
+            np.testing.assert_almost_equal(res_all.signature[idx],
+                                           res_single.signature[0])
