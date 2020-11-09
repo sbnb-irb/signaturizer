@@ -1,7 +1,7 @@
 pytest
 pytest-cov
-tensorflow==1.14
-tensorflow_hub
+tensorflow<1.15
+tensorflow_hub<0.10
 numpy
 h5py
 tqdm

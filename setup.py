@@ -16,8 +16,8 @@ setup(
     py_modules=find_packages(),
     packages=find_packages(),
     install_requires=[
-        'tensorflow<2',
-        'tensorflow_hub',
+        'tensorflow<1.15',
+        'tensorflow_hub<0.10',
         'numpy',
         'h5py'],
     zip_safe=False,
