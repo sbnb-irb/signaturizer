@@ -140,6 +140,9 @@ class Signaturizer(object):
             results: `SignaturizerResult` class. The ordering of input SMILES
                 is preserved.
         """
+        # input must be a list, otherwise we make it so
+        if isinstance(molecules, str):
+            molecules = [molecules]
         # convert input molecules to InChI
         inchies = list()
         if keytype.upper() == 'SMILES':
