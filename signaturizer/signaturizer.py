@@ -218,11 +218,11 @@ class Signaturizer(object):
                 if failed:
                     apreds[np.array(failed)] = np.nan
                 results.applicability[chunk] = apreds
+        failed = np.isnan(results.signature[:, 0])
+        results.failed[:] = np.isnan(results.signature[:, 0])
         results.close()
         if self.verbose:
             print('PREDICTION complete!')
-        failed = np.isnan(results.signature[:, 0])
-        results.failed = failed
         if any(failed) > 0:
             print('Some molecules could not be recognized,'
                   ' the corresponding signatures are NaN')
