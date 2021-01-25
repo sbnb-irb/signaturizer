@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 __author__ = """Martino Bertoni"""
 __email__ = 'martino.bertoni@irbbarcelona.org'
-__version__ = '1.1.8'
+__version__ = '1.1.9'
 
 setup(
     name='signaturizer',
@@ -16,8 +16,8 @@ setup(
     py_modules=find_packages(),
     packages=find_packages(),
     install_requires=[
-        'tensorflow<1.15',
-        'tensorflow_hub<0.10',
+        'tensorflow<2.4',
+        'tensorflow_hub',
         'numpy',
         'h5py',
         'tqdm'],
