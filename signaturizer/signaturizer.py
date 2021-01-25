@@ -4,14 +4,11 @@ import h5py
 import shutil
 import numpy as np
 from tqdm import tqdm
-import warnings
-with warnings.catch_warnings():
-    warnings.filterwarnings("ignore", category=FutureWarning)
-    warnings.filterwarnings("ignore", category=DeprecationWarning)
-    import tensorflow.compat.v1 as tf
-    import tensorflow_hub as hub
-    from tensorflow.compat.v1.keras.models import Model
-    from tensorflow.compat.v1.keras import Input
+import tensorflow as tf
+import tensorflow_hub as hub
+from tensorflow.keras import Model
+from tensorflow.keras import Input
+
 try:
     from rdkit import Chem
     from rdkit import RDLogger
@@ -19,8 +16,6 @@ try:
 except ImportError:
     raise ImportError("requires RDKit " +
                       "https://www.rdkit.org/docs/Install.html")
-
-tf.logging.set_verbosity(tf.logging.ERROR)
 
 
 class Signaturizer(object):
@@ -31,7 +26,7 @@ class Signaturizer(object):
 
     def __init__(self, model_name,
                  base_url="http://chemicalchecker.com/api/db/getSignaturizer/",
-                 version='2020_02', local=False, tf_version='1', verbose=False,
+                 version='2020_02', local=False, verbose=False,
                  applicability=True):
         """Initialize a Signaturizer instance.
 
@@ -46,7 +41,6 @@ class Signaturizer(object):
             version(int): Signaturizer version.
             local(bool): Wethere the specified model_name shoudl be
                 interpreted as a path to a local model.
-            tf_version(int): The Tesorflow version.
             verbose(bool): If True some more information will be printed.
             applicability(bool): Wether to also compute the applicability of
                 each prediction.
@@ -69,11 +63,6 @@ class Signaturizer(object):
         main_input = Input(shape=(2048,), dtype=tf.float32, name='main_input')
         sign_output = list()
         app_output = list()
-        as_dict = False
-        output_key = 'default'
-        if len(self.model_names) == 1:
-            as_dict = True
-            output_key = None
         for name in self.model_names:
             # build module spec
             if local:
@@ -88,10 +77,10 @@ class Signaturizer(object):
                 if self.verbose:
                     print('LOADING remote:', url)
 
-            sign_layer = hub.KerasLayer(url, signature='serving_default',
+            sign_layer = hub.KerasLayer(url, signature='signature',
                                         trainable=False, tags=['serve'],
-                                        output_key=output_key,
-                                        signature_outputs_as_dict=as_dict)
+                                        output_key='signature',
+                                        signature_outputs_as_dict=False)
             sign_output.append(sign_layer(main_input))
 
             if self.applicability:
@@ -99,8 +88,8 @@ class Signaturizer(object):
                     app_layer = hub.KerasLayer(
                         url, signature='applicability',
                         trainable=False, tags=['serve'],
-                        output_key=output_key,
-                        signature_outputs_as_dict=as_dict)
+                        output_key='applicability',
+                        signature_outputs_as_dict=False)
                     app_output.append(app_layer(main_input))
                 except Exception as ex:
                     print('WARNING: applicability predictions not available. '
