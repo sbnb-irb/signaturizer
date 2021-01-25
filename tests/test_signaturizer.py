@@ -1,6 +1,5 @@
 import os
 import math
-import pickle
 import shutil
 import unittest
 import numpy as np
@@ -37,8 +36,8 @@ class TestSignaturizer(unittest.TestCase):
 
     def test_predict(self):
         # load reference predictions
-        ref_file = os.path.join(self.data_dir, 'pred.pkl')
-        pred_ref = pickle.load(open(ref_file, 'rb'))
+        ref_file = os.path.join(self.data_dir, 'pred.npy')
+        pred_ref = np.load(open(ref_file, 'rb'))
         # load module and predict
         module_dir = os.path.join(self.data_dir, 'B1')
         module = Signaturizer(module_dir, local=True)
@@ -49,6 +48,8 @@ class TestSignaturizer(unittest.TestCase):
         res = module.predict(self.test_smiles, destination)
         self.assertTrue(os.path.isfile(destination))
         np.testing.assert_almost_equal(pred_ref, res.signature[:])
+        self.assertEqual(len(res.applicability[:]), 2)
+        self.assertFalse(np.isnan(res.applicability[0]))
         # test prediction of invalid SMILES
         res = module.predict(self.invalid_smiles)
         for comp in res.signature[0]:

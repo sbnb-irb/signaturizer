@@ -4,11 +4,11 @@ import unittest
 import numpy as np
 from .helper import skip_if_import_exception, start_http_server
 
-from signaturizer.exporter import export_smilespred, export_savedmodel
+from signaturizer.exporter import export_smilespred
 from signaturizer import Signaturizer
 
 
-class TestSignaturizer(unittest.TestCase):
+class TestExporter(unittest.TestCase):
 
     def setUp(self):
         # path for test data
@@ -76,6 +76,7 @@ class TestSignaturizer(unittest.TestCase):
         pred = res.signature[:]
         ref_pred_file = os.path.join(
             self.data_dir, 'models', 'smiles_pred.npy')
+        #np.save(ref_pred_file, pred)
         pred_ref = np.load(ref_pred_file)
         np.testing.assert_almost_equal(pred_ref, pred)
         apred = res.applicability[:]
@@ -122,20 +123,3 @@ class TestSignaturizer(unittest.TestCase):
         pred = res.signature[:]
         np.testing.assert_almost_equal(pred_ref, pred)
 
-        # export savedmodel
-        module_destination = os.path.join(
-            self.tmp_dir, 'dest_savedmodel.tar.gz')
-        tmp_path_savedmodel = os.path.join(self.tmp_dir, 'export_savedmodel')
-        export_savedmodel(
-            tmp_path_smilespred, module_destination,
-            tmp_path=tmp_path_savedmodel, clear_tmp=False)
-        # test intermediate step
-        module = Signaturizer(tmp_path_savedmodel, local=True)
-        res = module.predict(self.test_smiles)
-        pred = res.signature[:]
-        np.testing.assert_almost_equal(pred_ref, pred)
-        # test final step
-        module = Signaturizer(module_file, base_url=base_url, version=version)
-        res = module.predict(self.test_smiles)
-        pred = res.signature[:]
-        np.testing.assert_almost_equal(pred_ref, pred)
