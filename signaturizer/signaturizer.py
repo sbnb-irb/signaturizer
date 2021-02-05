@@ -194,7 +194,8 @@ class Signaturizer(object):
                     sign0s.append(calc_s0)
             # stack input fingerprints and run signature predictor
             sign0s = np.vstack(sign0s)
-            preds = self.model.predict(sign0s, batch_size=batch_size)
+            preds = self.model.predict(tf.convert_to_tensor(sign0s, dtype=tf.float32),
+                                       batch_size=batch_size)
             # add NaN where SMILES conversion failed
             if failed:
                 preds[np.array(failed)] = np.full(features,  np.nan)
@@ -203,7 +204,9 @@ class Signaturizer(object):
                 results.mfp[chunk] = sign0s
             # run applicability predictor
             if self.applicability:
-                apreds = self.app_model.predict(sign0s, batch_size=batch_size)
+                apreds = self.app_model.predict(
+                    tf.convert_to_tensor(sign0s, dtype=tf.float32),
+                    batch_size=batch_size)
                 if failed:
                     apreds[np.array(failed)] = np.nan
                 results.applicability[chunk] = apreds
