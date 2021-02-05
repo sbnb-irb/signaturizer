@@ -1,7 +1,5 @@
 pytest
 pytest-cov
-tensorflow<2.4
+tensorflow
 tensorflow_hub
-numpy
-h5py
 tqdm
