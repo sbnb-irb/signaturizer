@@ -63,6 +63,16 @@ class Signaturizer(object):
         main_input = Input(shape=(2048,), dtype=tf.float32, name='main_input')
         sign_output = list()
         app_output = list()
+        if version == '2019_01':
+            sign_signature = 'serving_default'
+            sing_output_key = 'default'
+            app_signature = 'applicability'
+            app_output_key = 'default'
+        else:
+            sign_signature = 'signature'
+            sing_output_key = 'signature'
+            app_signature = 'applicability'
+            app_output_key = 'applicability'
         for name in self.model_names:
             # build module spec
             if local:
@@ -77,18 +87,18 @@ class Signaturizer(object):
                 if self.verbose:
                     print('LOADING remote:', url)
 
-            sign_layer = hub.KerasLayer(url, signature='signature',
+            sign_layer = hub.KerasLayer(url, signature=sign_signature,
                                         trainable=False, tags=['serve'],
-                                        output_key='signature',
+                                        output_key=sing_output_key,
                                         signature_outputs_as_dict=False)
             sign_output.append(sign_layer(main_input))
 
             if self.applicability:
                 try:
                     app_layer = hub.KerasLayer(
-                        url, signature='applicability',
+                        url, signature=app_signature,
                         trainable=False, tags=['serve'],
-                        output_key='applicability',
+                        output_key=app_output_key,
                         signature_outputs_as_dict=False)
                     app_output.append(app_layer(main_input))
                 except Exception as ex:
