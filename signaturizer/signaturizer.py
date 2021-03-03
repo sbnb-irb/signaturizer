@@ -121,7 +121,8 @@ class Signaturizer(object):
             RDLogger.DisableLog('rdApp.*')
 
     def predict(self, molecules, destination=None, keytype='SMILES',
-                save_mfp=False, chunk_size=1000, batch_size=128):
+                save_mfp=False, chunk_size=1000, batch_size=128,
+                y_scramble=False):
         """Predict signatures for given SMILES.
 
         Perform signature prediction for input SMILES. We recommend that the
@@ -133,8 +134,13 @@ class Signaturizer(object):
             molecules(list): List of strings representing molecules. Can be
                 SMILES (by default) or InChI.
             destination(str): File path where to save predictions.
+            keytype(str): Whether to interpret molecules as InChI or SMILES.
+            save_mfp(bool): if True and additional matrix with the Morgan
+            	Fingerprint is saved.
             chunk_size(int): Perform prediction on chunks of this size.
-            keytype(str): Wether to interpret molecules as InChI or SMILES.
+            batch_size(int): Batch size for prediction.
+            y_scramble(bool): Validation test scrambling the MFP before
+            	prediction.
         Returns:
             results: `SignaturizerResult` class. The ordering of input SMILES
                 is preserved.
@@ -204,6 +210,10 @@ class Signaturizer(object):
                     sign0s.append(calc_s0)
             # stack input fingerprints and run signature predictor
             sign0s = np.vstack(sign0s)
+            if y_scramble:
+            	y_shuffle =np.arange(sign0s.shape[1])
+            	np.random.shuffle(y_shuffle)
+            	sign0s = sign0s[:, y_shuffle]
             preds = self.model.predict(tf.convert_to_tensor(sign0s, dtype=tf.float32),
                                        batch_size=batch_size)
             # add NaN where SMILES conversion failed
