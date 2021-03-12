@@ -31,10 +31,6 @@ conda create --no-default-packages -n sign -y python=3.7
 conda activate sign
 conda install -c conda-forge -y rdkit
 ```
-> **_NOTE:_**  On some system with previous tensorflow installation, the following might be needed:
-> ```bash
-> conda create --no-default-packages -n sign -y python=3.7 tensorflow=1.14.0
-> ```
 
 ### from PyPI
 
