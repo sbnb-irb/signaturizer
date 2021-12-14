@@ -78,12 +78,12 @@ def export_batch(cc, destination_dir, datasets=None, applicability=True):
     if datasets is None:
         datasets = cc.datasets_exemplary()
     for ds in datasets:
-        s3 = cc.signature(ds, 'sign3')
-        pred_path = os.path.join(s3.model_path, 'smiles_final')
+        cc_sign = cc.signature(ds, 'sign4')
+        pred_path = os.path.join(cc_sign.model_path, 'smiles_final')
         mdl_dest = os.path.join(destination_dir, ds[:2])
         if applicability:
             apred_path = os.path.join(
-                s3.model_path, 'smiles_applicability_final')
+                cc_sign.model_path, 'smiles_applicability_final')
             export_smilespred(pred_path, mdl_dest, compress=False,
                               applicability_path=apred_path)
             export_smilespred(pred_path, mdl_dest + '.tar.gz',
