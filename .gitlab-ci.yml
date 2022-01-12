@@ -4,6 +4,7 @@ before_script:
     - python --version
     - export PIP_CACHE_DIR="/opt/cache/pip"
     - conda init bash
+    - source ~/.bashrc
     - conda create -n signaturizer_env -y python=3.7
     - conda activate signaturizer_env
     - conda install -c conda-forge -y rdkit
