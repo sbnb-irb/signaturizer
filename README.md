@@ -84,8 +84,8 @@ these papers:
 
 
 > Bertoni M, et al<br>
-> "**Bioactivity descriptors for uncharacterized compounds.**"<br>
-> BioaRXiv (2020) [[link]](https://doi.org/10.1038/s41467-021-24150-4)
+> "**Bioactivity descriptors for uncharacterized chemical compounds.**"<br>
+> Nature Communications (2021) [[link]](https://doi.org/10.1038/s41467-021-24150-4)
 
 > Duran-Frigola M, et al<br>
 > "**Extending the small-molecule similarity principle to all levels of biology with the Chemical Checker.**"<br>
