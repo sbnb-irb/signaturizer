@@ -3,3 +3,4 @@ pytest-cov
 tensorflow
 tensorflow_hub
 tqdm
+rdkit-pypi
