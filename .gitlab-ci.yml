@@ -1,6 +1,7 @@
 image: continuumio/miniconda3:latest
 
 before_script:
+    - apt-get install libstdc++6
     - python --version
     - export PIP_CACHE_DIR="/opt/cache/pip"
     - conda create -n signaturizer_env -y python=3.7
