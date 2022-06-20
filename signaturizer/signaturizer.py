@@ -121,8 +121,8 @@ class Signaturizer(object):
             RDLogger.DisableLog('rdApp.*')
 
     def predict(self, molecules, destination=None, keytype='SMILES',
-                save_mfp=False, chunk_size=1000, batch_size=128,
-                y_scramble=False):
+                save_mfp=False, chunk_size=32, batch_size=128,
+                compression=None,  y_scramble=False, keys=None):
         """Predict signatures for given SMILES.
 
         Perform signature prediction for input SMILES. We recommend that the
@@ -136,11 +136,11 @@ class Signaturizer(object):
             destination(str): File path where to save predictions.
             keytype(str): Whether to interpret molecules as InChI or SMILES.
             save_mfp(bool): if True and additional matrix with the Morgan
-            	Fingerprint is saved.
+                Fingerprint is saved.
             chunk_size(int): Perform prediction on chunks of this size.
             batch_size(int): Batch size for prediction.
             y_scramble(bool): Validation test scrambling the MFP before
-            	prediction.
+                prediction.
         Returns:
             results: `SignaturizerResult` class. The ordering of input SMILES
                 is preserved.
@@ -150,8 +150,11 @@ class Signaturizer(object):
             molecules = [molecules]
         # convert input molecules to InChI
         inchies = list()
+        if keys is None:
+            keys = molecules
+        valid_keys = list()
         if keytype.upper() == 'SMILES':
-            for smi in molecules:
+            for smi, key in tqdm(zip(molecules, keys), desc='Converting to InChI'):
                 if smi == '':
                     smi = 'INVALID SMILES'
                 mol = Chem.MolFromSmiles(smi)
@@ -162,15 +165,21 @@ class Signaturizer(object):
                     continue
                 inchi = Chem.rdinchi.MolToInchi(mol)[0]
                 if self.verbose:
-                    print('CONVERTED:', smi, inchi)
+                    #print('CONVERTED:', smi, inchi)
+                    pass
                 inchies.append(inchi)
+                valid_keys.append(key)
         else:
             inchies = molecules
         self.inchies = inchies
+        # if inchies are the input we still need a valid keys list
+        if len(valid_keys) == 0:
+            valid_keys = keys
         # Prepare result object
         features = len(self.model_names) * 128
         results = SignaturizerResult(
-            len(inchies), destination, features, save_mfp=save_mfp)
+            len(inchies), destination, features, save_mfp=save_mfp,
+            chunk_size=chunk_size, compression=compression, keys=valid_keys)
         results.dataset[:] = self.model_names
         if results.readonly:
             raise Exception(
@@ -178,9 +187,9 @@ class Signaturizer(object):
                 'delete or rename to proceed.')
 
         # predict by chunk
-        all_chunks = range(0, len(inchies), chunk_size)
-        for i in tqdm(all_chunks, disable=not self.verbose):
-            chunk = slice(i, i + chunk_size)
+        all_chunks = range(0, len(inchies), batch_size)
+        for i in tqdm(all_chunks, desc='Generating signatures'):
+            chunk = slice(i, i + batch_size)
             sign0s = list()
             failed = list()
             for idx, inchi in enumerate(inchies[chunk]):
@@ -211,9 +220,9 @@ class Signaturizer(object):
             # stack input fingerprints and run signature predictor
             sign0s = np.vstack(sign0s)
             if y_scramble:
-            	y_shuffle =np.arange(sign0s.shape[1])
-            	np.random.shuffle(y_shuffle)
-            	sign0s = sign0s[:, y_shuffle]
+                y_shuffle = np.arange(sign0s.shape[1])
+                np.random.shuffle(y_shuffle)
+                sign0s = sign0s[:, y_shuffle]
             preds = self.model.predict(tf.convert_to_tensor(sign0s, dtype=tf.float32),
                                        batch_size=batch_size)
             # add NaN where SMILES conversion failed
@@ -232,6 +241,7 @@ class Signaturizer(object):
                 results.applicability[chunk] = apreds
         failed = np.isnan(results.signature[:, 0])
         results.failed[:] = np.isnan(results.signature[:, 0])
+        results.keys[:] = valid_keys
         results.close()
         if self.verbose:
             print('PREDICTION complete!')
@@ -270,7 +280,8 @@ class SignaturizerResult():
     the same vector available as HDF5 datasets.
     """
 
-    def __init__(self, size, destination, features=128, save_mfp=False):
+    def __init__(self, size, destination, features=128, compression='gzip',
+                 chunk_size=32, save_mfp=False, keys=None):
         """Initialize a SignaturizerResult instance.
 
         Args:
@@ -286,6 +297,8 @@ class SignaturizerResult():
         if self.dst is None:
             # simple numpy arrays
             self.h5 = None
+            self.keys = np.full((size, ), np.nan, order='F',
+                                     dtype=str)
             self.signature = np.full((size, features), np.nan, order='F',
                                      dtype=np.float32)
             self.applicability = np.full(
@@ -305,20 +318,25 @@ class SignaturizerResult():
             else:
                 # create the datasets
                 self.h5 = h5py.File(self.dst, 'w')
-                self.h5.create_dataset(
-                    'signature', (size, features), dtype=np.float32)
-                self.h5.create_dataset(
-                    'applicability', (size, int(np.ceil(features / 128))),
-                    dtype=np.float32)
-                self.h5.create_dataset(
-                    'dataset', (int(np.ceil(features / 128)),),
-                    dtype=h5py.special_dtype(vlen=str))
-                self.h5.create_dataset(
-                    'failed', (size,),
-                    dtype=np.bool)
+                self.h5.create_dataset('keys', (size,),
+                                       dtype=h5py.string_dtype())
+                self.h5.create_dataset('signature', (size, features),
+                                       dtype=np.float32,
+                                       chunks=(chunk_size, features),
+                                       compression=compression)
+                app_dim = int(np.ceil(features / 128))
+                self.h5.create_dataset('applicability', (size, app_dim),
+                                       dtype=np.float32)
+                ds_dim = int(np.ceil(features / 128))
+                self.h5.create_dataset('dataset', (ds_dim,),
+                                       dtype=h5py.string_dtype())
+                self.h5.create_dataset('failed', (size,), dtype=np.bool)
                 if self.save_mfp:
-                    self.h5.create_dataset('mfp', (size, 2048), dtype=int)
+                    self.h5.create_dataset('mfp', (size, 2048), dtype=int,
+                                           chunks=(chunk_size, 2048),
+                                           compression=compression)
             # expose the datasets
+            self.keys = self.h5['keys']
             self.signature = self.h5['signature']
             self.applicability = self.h5['applicability']
             self.dataset = self.h5['dataset']
