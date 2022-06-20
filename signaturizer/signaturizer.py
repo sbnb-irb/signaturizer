@@ -120,10 +120,45 @@ class Signaturizer(object):
         else:
             RDLogger.DisableLog('rdApp.*')
 
-    def predict(self, molecules, destination=None, keytype='SMILES',
-                save_mfp=False, chunk_size=32, batch_size=128,
-                compression=None,  y_scramble=False, keys=None):
-        """Predict signatures for given SMILES.
+    def _smiles_to_mol(self, molecules, keys, drop_invalid=True):
+        mol_objects = list()
+        valid_keys = list()
+        for smi, key in tqdm(zip(molecules, keys), desc='Parsing SMILES'):
+            if smi == '':
+                smi = 'INVALID SMILES'
+            mol = Chem.MolFromSmiles(smi)
+            if mol is None:
+                if self.verbose:
+                    print("Cannot get molecule from SMILES: %s." % smi)
+                if drop_invalid:
+                    continue
+            valid_keys.append(key)
+            mol_objects.append(mol)
+        return mol_objects, valid_keys
+
+    def _inchi_to_mol(self, molecules, keys, drop_invalid=True):
+        mol_objects = list()
+        valid_keys = list()
+        for inchi, key in tqdm(zip(molecules, keys), desc='Parsing InChI'):
+            inchi = inchi.encode('ascii', 'ignore')
+            if inchi == '':
+                inchi = 'INVALID InChI'
+            mol = Chem.MolFromInchi(inchi)
+            if mol is None:
+                if self.verbose:
+                    print("Cannot get molecule from InChI: %s." % inchi)
+                if drop_invalid:
+                    continue
+            valid_keys.append(key)
+            mol_objects.append(mol)
+        return mol_objects, valid_keys
+
+
+    def predict(self, molecules, destination=None, molecule_fmt='SMILES',
+                keys=None, save_mfp=False, drop_invalid=True,
+                batch_size=128, chunk_size=32,
+                compression=None,  y_scramble=False,):
+        """Predict signatures for given molecules.
 
         Perform signature prediction for input SMILES. We recommend that the
         list is sorted and non-redundant, but this is optional. Some input
@@ -131,14 +166,21 @@ class Signaturizer(object):
         is possible and the corresponding signature will be set to NaN.
 
         Args:
-            molecules(list): List of strings representing molecules. Can be
-                SMILES (by default) or InChI.
-            destination(str): File path where to save predictions.
-            keytype(str): Whether to interpret molecules as InChI or SMILES.
-            save_mfp(bool): if True and additional matrix with the Morgan
-                Fingerprint is saved.
-            chunk_size(int): Perform prediction on chunks of this size.
+            molecules(list): List of strings representing molecules. 
+                Can be SMILES (by default), InChI or RDKIT molecule objects.
+            destination(str): File path where to save predictions. If file 
+                exists already it will throw an exception.
+            molecule_fmt(str): Molecule format, whether to interpret molecules 
+                as InChI, SMILES or RDKIT.
+            keys(list): A list of keys that will be saved along with the
+                predictions.
+            save_mfp(bool): Set to True to save an additional matrix with
+                classical Morgan Fingerprint ECFP4.
+            drop_invalid(bool): Wether to drop invalid molecules i.e. molecules
+                that cannot be interpreted with RdKit.
             batch_size(int): Batch size for prediction.
+            chunk_size(int): Chunk size for the reulting HDF5.
+            compression(str): Compression used for storing the HDF5.
             y_scramble(bool): Validation test scrambling the MFP before
                 prediction.
         Returns:
@@ -148,38 +190,28 @@ class Signaturizer(object):
         # input must be a list, otherwise we make it so
         if isinstance(molecules, str):
             molecules = [molecules]
-        # convert input molecules to InChI
-        inchies = list()
+        # if keys are not specified just use incremental numbers
         if keys is None:
-            keys = molecules
-        valid_keys = list()
-        if keytype.upper() == 'SMILES':
-            for smi, key in tqdm(zip(molecules, keys), desc='Converting to InChI'):
-                if smi == '':
-                    smi = 'INVALID SMILES'
-                mol = Chem.MolFromSmiles(smi)
-                if mol is None:
-                    if self.verbose:
-                        print("Cannot get molecule from SMILES: %s." % smi)
-                    inchies.append('INVALID SMILES')
-                    continue
-                inchi = Chem.rdinchi.MolToInchi(mol)[0]
-                if self.verbose:
-                    #print('CONVERTED:', smi, inchi)
-                    pass
-                inchies.append(inchi)
-                valid_keys.append(key)
+            keys = [str(x) for x in range(len(molecules))]
+
+        # convert input molecules to molecule object
+        if molecule_fmt.upper() == 'SMILES':
+            molecules, keys = self._smiles_to_mol(
+                molecules, keys=keys, drop_invalid=drop_invalid)
+        elif molecule_fmt.upper() == 'INCHI':
+            molecules, keys = self._inchi_to_mol(
+                molecules, keys=keys, drop_invalid=drop_invalid)
+        elif molecule_fmt.upper() == 'RDKIT':
+            molecules, keys = molecules, keys
         else:
-            inchies = molecules
-        self.inchies = inchies
-        # if inchies are the input we still need a valid keys list
-        if len(valid_keys) == 0:
-            valid_keys = keys
-        # Prepare result object
+            raise Exception('Unsupported molecule format `%s`' % molecule_fmt)
+
+        # prepare result object
         features = len(self.model_names) * 128
+        chunk_size = min(chunk_size, len(molecules))
         results = SignaturizerResult(
-            len(inchies), destination, features, save_mfp=save_mfp,
-            chunk_size=chunk_size, compression=compression, keys=valid_keys)
+            len(molecules), destination, features, save_mfp=save_mfp,
+            chunk_size=chunk_size, compression=compression, keys=keys)
         results.dataset[:] = self.model_names
         if results.readonly:
             raise Exception(
@@ -187,22 +219,14 @@ class Signaturizer(object):
                 'delete or rename to proceed.')
 
         # predict by chunk
-        all_chunks = range(0, len(inchies), batch_size)
+        all_chunks = range(0, len(molecules), batch_size)
         for i in tqdm(all_chunks, desc='Generating signatures'):
             chunk = slice(i, i + batch_size)
+            # prepare predictor input
             sign0s = list()
             failed = list()
-            for idx, inchi in enumerate(inchies[chunk]):
+            for idx, mol in enumerate(molecules[chunk]):
                 try:
-                    # read molecule
-                    inchi = inchi.encode('ascii', 'ignore')
-                    if self.verbose:
-                        # print('READING', inchi, type(inchi))
-                        pass
-                    mol = Chem.inchi.MolFromInchi(inchi)
-                    if mol is None:
-                        raise Exception(
-                            "Cannot get molecule from InChI.")
                     info = {}
                     fp = AllChem.GetMorganFingerprintAsBitVect(
                         mol, 2, nBits=2048, bitInfo=info)
@@ -212,7 +236,7 @@ class Signaturizer(object):
                 except Exception as err:
                     # in case of failure save idx to fill NaNs
                     if self.verbose:
-                        print("SKIPPING %s: %s" % (inchi, str(err)))
+                        print("FAILED %s: %s" % (idx, str(err)))
                     failed.append(idx)
                     calc_s0 = np.full((2048, ),  np.nan)
                 finally:
@@ -223,9 +247,11 @@ class Signaturizer(object):
                 y_shuffle = np.arange(sign0s.shape[1])
                 np.random.shuffle(y_shuffle)
                 sign0s = sign0s[:, y_shuffle]
-            preds = self.model.predict(tf.convert_to_tensor(sign0s, dtype=tf.float32),
-                                       batch_size=batch_size)
-            # add NaN where SMILES conversion failed
+            # run prediction
+            preds = self.model.predict(
+                tf.convert_to_tensor(sign0s, dtype=tf.float32),
+                batch_size=batch_size)
+            # add NaN where conversion failed
             if failed:
                 preds[np.array(failed)] = np.full(features,  np.nan)
             results.signature[chunk] = preds
@@ -241,7 +267,7 @@ class Signaturizer(object):
                 results.applicability[chunk] = apreds
         failed = np.isnan(results.signature[:, 0])
         results.failed[:] = np.isnan(results.signature[:, 0])
-        results.keys[:] = valid_keys
+        results.keys[:] = keys
         results.close()
         if self.verbose:
             print('PREDICTION complete!')

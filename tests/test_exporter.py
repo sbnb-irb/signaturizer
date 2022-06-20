@@ -97,9 +97,9 @@ class TestExporter(unittest.TestCase):
 
         # load CC instance and smiles prediction model
         cc = ChemicalChecker()
-        s3 = cc.signature('B1.001', 'sign3')
+        s4 = cc.signature('B1.001', 'sign4')
         tmp_pred_ref = os.path.join(self.tmp_dir, 'tmp.h5')
-        s3.predict_from_smiles(self.test_smiles, tmp_pred_ref)
+        s4.predict_from_smiles(self.test_smiles, tmp_pred_ref)
         pred_ref = DataSignature(tmp_pred_ref)[:]
 
         # export smilespred
@@ -109,7 +109,7 @@ class TestExporter(unittest.TestCase):
             self.tmp_dir, version, module_file)
         tmp_path_smilespred = os.path.join(self.tmp_dir, 'export_smilespred')
         export_smilespred(
-            os.path.join(s3.model_path, 'smiles_final'),
+            os.path.join(s4.model_path, 'smiles_final'),
             module_destination, tmp_path=tmp_path_smilespred, clear_tmp=False)
         # test intermediate step
         module = Signaturizer(tmp_path_smilespred, local=True)

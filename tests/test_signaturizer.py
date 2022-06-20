@@ -25,6 +25,9 @@ class TestSignaturizer(unittest.TestCase):
         ]
         self.invalid_smiles = ['C', 'C&', 'C']
         self.tautomer_smiles = ['CC(O)=Nc1ccc(O)cc1', 'CC(=O)NC1=CC=C(C=C1)O']
+        self.enantiomer_smiles = [
+            'C1CC(=O)NC(=O)[C@H]1N2C(=O)C3=CC=CC=C3C2=O',
+            'C1CC(=O)NC(=O)[C@@H]1N2C(=O)C3=CC=CC=C3C2=O']
         self.inchi = [
             'InChI=1S/C8H9NO2/c1-6(10)9-7-2-4-8(11)5-3-7/h2-5,11H,1H3,(H,9,10)'
         ]
@@ -40,7 +43,7 @@ class TestSignaturizer(unittest.TestCase):
         pred_ref = np.load(open(ref_file, 'rb'))
         # load module and predict
         module_dir = os.path.join(self.data_dir, 'B1')
-        module = Signaturizer(module_dir, local=True)
+        module = Signaturizer(module_dir, local=True, verbose=True)
         res = module.predict(self.test_smiles)
         np.testing.assert_almost_equal(pred_ref, res.signature[:])
         # test saving to file
@@ -51,13 +54,20 @@ class TestSignaturizer(unittest.TestCase):
         self.assertEqual(len(res.applicability[:]), 2)
         self.assertFalse(np.isnan(res.applicability[0]))
         # test prediction of invalid SMILES
-        res = module.predict(self.invalid_smiles)
+        res = module.predict(self.invalid_smiles, drop_invalid=False)
         for comp in res.signature[0]:
             self.assertFalse(math.isnan(comp))
         for comp in res.signature[1]:
             self.assertTrue(math.isnan(comp))
         for comp in res.signature[2]:
             self.assertFalse(math.isnan(comp))
+        self.assertTrue(all(res.failed == [False, True, False]))
+        res = module.predict(self.invalid_smiles, drop_invalid=True)
+        for comp in res.signature[0]:
+            self.assertFalse(math.isnan(comp))
+        for comp in res.signature[1]:
+            self.assertFalse(math.isnan(comp))
+        self.assertTrue(all(res.failed == [False, False]))
 
     def test_predict_multi(self):
         # load multiple model and check that results stacked correctly
@@ -81,7 +91,7 @@ class TestSignaturizer(unittest.TestCase):
         np.testing.assert_almost_equal(res_A1B1.signature[:, 128:],
                                        res_B1.signature)
 
-        res = module_A1B1.predict(self.invalid_smiles)
+        res = module_A1B1.predict(self.invalid_smiles, drop_invalid=False)
         for comp in res.signature[0]:
             self.assertFalse(math.isnan(comp))
         for comp in res.signature[1]:
@@ -108,11 +118,23 @@ class TestSignaturizer(unittest.TestCase):
     def test_tautomers(self):
         module = Signaturizer('A1')
         res = module.predict(self.tautomer_smiles)
-        self.assertTrue(all(res.signature[0] == res.signature[1]))
+        # they are molecules with different connectivity so must be different
+        np.testing.assert_raises(
+                AssertionError, np.testing.assert_array_equal, 
+                res.signature[0], res.signature[1])
+
+    def test_enantiomers(self):
+        module = Signaturizer('A1')
+        res = module.predict(self.enantiomer_smiles, save_mfp=True)
+        # they are molecules with different chirality
+        # not yet handled as they are have identical MFP
+        print(np.argwhere(res.mfp[0]).ravel())
+        print(np.argwhere(res.mfp[1]).ravel())
+        self.assertTrue(all(res.signature[0] == res.signature[0]))
 
     def test_inchi(self):
         module = Signaturizer('A1')
-        res_inchi = module.predict(self.inchi, keytype='InChI')
+        res_inchi = module.predict(self.inchi, molecule_fmt='InChI')
         res_smiles = module.predict([self.tautomer_smiles[0]])
         self.assertTrue(all(res_inchi.signature[0] == res_smiles.signature[0]))
 
