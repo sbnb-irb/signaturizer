@@ -26,7 +26,7 @@ class Signaturizer(object):
 
     def __init__(self, model_name,
                  base_url="http://chemicalchecker.com/api/db/getSignaturizer/",
-                 version='2021_07', local=False, verbose=False,
+                 version='current', local=False, verbose=False,
                  applicability=True):
         """Initialize a Signaturizer instance.
 
