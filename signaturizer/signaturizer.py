@@ -232,7 +232,7 @@ class Signaturizer(object):
                         mol, 2, nBits=2048, bitInfo=info)
                     bin_s0 = [fp.GetBit(i) for i in range(
                         fp.GetNumBits())]
-                    calc_s0 = np.array(bin_s0).astype(np.float32)
+                    calc_s0 = np.array(bin_s0).astype('float32')
                 except Exception as err:
                     # in case of failure save idx to fill NaNs
                     if self.verbose:
@@ -326,12 +326,12 @@ class SignaturizerResult():
             self.keys = np.full((size, ), np.nan, order='F',
                                      dtype=str)
             self.signature = np.full((size, features), np.nan, order='F',
-                                     dtype=np.float32)
+                                     dtype='float32')
             self.applicability = np.full(
-                (size, int(np.ceil(features / 128))), np.nan, dtype=np.float32)
+                (size, int(np.ceil(features / 128))), np.nan, dtype='float32')
             self.dataset = np.full((int(np.ceil(features / 128)),), np.nan,
                                    dtype=h5py.special_dtype(vlen=str))
-            self.failed = np.full((size, ), False, dtype=np.bool)
+            self.failed = np.full((size, ), False, dtype=bool)
             if self.save_mfp:
                 self.mfp = np.full((size, 2048), np.nan, order='F', dtype=int)
         else:
@@ -347,16 +347,16 @@ class SignaturizerResult():
                 self.h5.create_dataset('keys', (size,),
                                        dtype=h5py.string_dtype())
                 self.h5.create_dataset('signature', (size, features),
-                                       dtype=np.float32,
+                                       dtype='float32',
                                        chunks=(chunk_size, features),
                                        compression=compression)
                 app_dim = int(np.ceil(features / 128))
                 self.h5.create_dataset('applicability', (size, app_dim),
-                                       dtype=np.float32)
+                                       dtype='float32')
                 ds_dim = int(np.ceil(features / 128))
                 self.h5.create_dataset('dataset', (ds_dim,),
                                        dtype=h5py.string_dtype())
-                self.h5.create_dataset('failed', (size,), dtype=np.bool)
+                self.h5.create_dataset('failed', (size,), dtype=bool)
                 if self.save_mfp:
                     self.h5.create_dataset('mfp', (size, 2048), dtype=int,
                                            chunks=(chunk_size, 2048),
