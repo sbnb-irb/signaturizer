@@ -13,6 +13,7 @@ try:
     from rdkit import Chem
     from rdkit import RDLogger
     from rdkit.Chem import AllChem
+    from rdkit.Chem import rdFingerprintGenerator
 except ImportError:
     raise ImportError("requires RDKit " +
                       "https://www.rdkit.org/docs/Install.html")
@@ -217,7 +218,8 @@ class Signaturizer(object):
             raise Exception(
                 'Destination file already exists, ' +
                 'delete or rename to proceed.')
-
+        
+        mfpgen = rdFingerprintGenerator.GetMorganGenerator(radius=2, fpSize=2048)
         # predict by chunk
         all_chunks = range(0, len(molecules), batch_size)
         for i in tqdm(all_chunks, desc='Generating signatures'):
@@ -228,8 +230,8 @@ class Signaturizer(object):
             for idx, mol in enumerate(molecules[chunk]):
                 try:
                     info = {}
-                    fp = AllChem.GetMorganFingerprintAsBitVect(
-                        mol, 2, nBits=2048, bitInfo=info)
+                    fp = mfpgen.GetFingerprint( mol )
+                    #fp = AllChem.GetMorganFingerprintAsBitVect( mol, 2, nBits=2048, bitInfo=info)
                     bin_s0 = [fp.GetBit(i) for i in range(
                         fp.GetNumBits())]
                     calc_s0 = np.array(bin_s0).astype('float32')
