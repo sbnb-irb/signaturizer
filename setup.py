@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 __author__ = """Martino Bertoni"""
 __email__ = 'martino.bertoni@irbbarcelona.org'
-__version__ = '1.1.13'
+__version__ = '1.1.14'
 
 setup(
     name='signaturizer',
@@ -27,4 +27,7 @@ setup(
         "Programming Language :: Python :: 2",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
     ])
