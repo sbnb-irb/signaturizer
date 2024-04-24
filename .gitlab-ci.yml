@@ -28,7 +28,7 @@ pypi_deploy_test:
   script:
     - pip install -U twine
     - python setup.py sdist
-    - twine upload --verbose --repository testpypi dist/*
+    - TWINE_PASSWORD=pypi-AgENdGVzdC5weXBpLm9yZwIkMDE3ZWQwMDgtNjZmMy00ZTZiLWE0N2QtMjg1MzU1MjYwNTMyAAIqWzMsImM2YjQyZWY1LWM5YWItNDk3NC05YzA4LWRlMWUyNmJiNmNmZiJdAAAGICd4oykogI38Toi6nRdm7jqll4g0JiMsrxLxvlKXZGBn TWINE_USERNAME=sbnb twine upload --verbose --repository testpypi dist/*
   #only:
   #  - tags
 
@@ -38,6 +38,6 @@ pypi_deploy:
   script:
     - pip install -U twine
     - python setup.py sdist
-    - twine upload --verbose dist/*
+    - TWINE_PASSWORD=pypi-AgEIcHlwaS5vcmcCJDcwMzdmMjcxLTRlZjMtNDBhZC1iZTUyLWZmMmRkYWRkZGE0MQACKlszLCIwNDg2NjJjOC1jN2YyLTQyYTUtYTk5NC1iMjJmOGMxZGM0ZTciXQAABiDKL6voXhWPh439q9PZ7Z77f89fCJ-PsnbPvyCQIj7TCQ TWINE_USERNAME=sbnb twine upload --verbose dist/*
   #only:
   #  - tags
