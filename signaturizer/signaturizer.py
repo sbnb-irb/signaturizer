@@ -19,7 +19,7 @@ except ImportError:
                       "https://www.rdkit.org/docs/Install.html")
 
 
-class Signaturizer(object):
+class Signaturizer( ):
     """Signaturizer Class.
 
     Loads TF-hub module, compose a single model, handle verbosity.
