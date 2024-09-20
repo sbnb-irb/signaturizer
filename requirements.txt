@@ -1,6 +1,6 @@
 pytest
 pytest-cov
-tensorflow
-tensorflow_hub
+tensorflow==2.15.1
+tensorflow_hub==0.16.1
 tqdm
 rdkit-pypi
