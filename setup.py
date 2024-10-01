@@ -16,8 +16,8 @@ setup(
     py_modules=find_packages(),
     packages=find_packages(),
     install_requires=[
-        'tensorflow',
-        'tensorflow_hub',
+        'tensorflow==2.15.1',
+        'tensorflow_hub==0.16.1',
         'tqdm'],
     zip_safe=False,
     license='MIT License',
