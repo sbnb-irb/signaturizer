@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 __author__ = """Martino Bertoni"""
 __email__ = 'martino.bertoni@irbbarcelona.org'
-__version__ = '1.1.14'
+__version__ = '1.1.16'
 
 setup(
     name='signaturizer',
@@ -16,8 +16,8 @@ setup(
     py_modules=find_packages(),
     packages=find_packages(),
     install_requires=[
-        'tensorflow',
-        'tensorflow_hub',
+        'tensorflow==2.15.1',
+        'tensorflow_hub==0.16.1',
         'tqdm'],
     zip_safe=False,
     license='MIT License',
@@ -31,3 +31,4 @@ setup(
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
     ])
+
